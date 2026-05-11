@@ -2,9 +2,21 @@ import { GoogleGenAI, Type } from "@google/genai";
 import { DiagnosisData, DiagnosisReport } from "../types";
 import { DIAGNOSIS_ITEMS } from "../constants";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+let aiInstance: GoogleGenAI | null = null;
+
+function getAI() {
+  if (!aiInstance) {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey) {
+      throw new Error("장사 비서 지능 엔진을 가동하기 위한 API Key가 설정되지 않았습니다. 관리자에게 문의하세요.");
+    }
+    aiInstance = new GoogleGenAI({ apiKey });
+  }
+  return aiInstance;
+}
 
 export async function generateDiagnosis(data: DiagnosisData): Promise<DiagnosisReport> {
+  const ai = getAI();
   const dataSummary = DIAGNOSIS_ITEMS.map((item) => {
     const value = data[item.id] || "데이터 없음";
     return `${item.id}. ${item.label}: ${value}`;
@@ -20,7 +32,7 @@ export async function generateDiagnosis(data: DiagnosisData): Promise<DiagnosisR
 4. 데이터 신뢰도(dataFidelity): 입력된 정보의 성실도와 구체성을 판단하여 0-100점으로 산출하십시오.
 5. 베테랑의 촌철살인(veteranPunchline): 분석 결과 중 가장 뼈아픈 지점이나 핵심 돌파구를 아주 짧고 강렬한 한마디(반말로 해도 무방, 전문가적 권위 필요)로 작성하십시오.
 6. 문제를 3층으로 분해: 표면 현상 -> 직접 원인 -> 구조적 원인 순으로 분석하십시오.
-6. 실행 가능성: 매장 규모와 사장님의 여력을 고려한 현실적인 솔루션과 타임라인이 있는 체크리스트를 제안하십시오.
+7. 실행 가능성: 매장 규모와 사장님의 여력을 고려한 현실적인 솔루션과 타임라인이 있는 체크리스트를 제안하십시오.
 
 출력은 반드시 지정된 JSON 형식을 따라야 합니다.
 `;

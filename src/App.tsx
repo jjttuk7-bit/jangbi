@@ -107,8 +107,9 @@ export default function App() {
     try {
       const result = await generateDiagnosis(data);
       setReport(result);
-    } catch (error) {
-      alert("분석 보고서 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
+    } catch (error: any) {
+      console.error("Diagnosis Error:", error);
+      alert(error.message || "분석 리포트 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
     } finally {
       setIsSubmitting(false);
     }
