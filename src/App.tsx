@@ -157,7 +157,7 @@ export default function App() {
             </div>
             <div>
               <h1 className="text-lg font-extrabold text-slate-900 tracking-tight">장사 비서 프로페셔널</h1>
-              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">Expert Analysis System v2.0</p>
+              <p className="text-[10px] text-slate-400 font-bold uppercase tracking-wider">전문가 분석 시스템 v2.0</p>
             </div>
           </div>
           
@@ -331,7 +331,7 @@ export default function App() {
             </div>
           </div>
           <div className="hidden sm:block text-[10px] font-black text-slate-300 uppercase tracking-[0.2em]">
-            SYSTEM STATUS: READY FOR ANALYSIS
+            시스템 상태: 분석 준비 완료
           </div>
         </div>
       </div>
@@ -370,7 +370,7 @@ export default function App() {
                   exit={{ opacity: 0, y: -20 }}
                   className="space-y-2"
                 >
-                  <div className="text-[10px] font-black text-brand-accent uppercase tracking-[0.3em]">Stage {loadingStage + 1} / {loadingStages.length}</div>
+                  <div className="text-[10px] font-black text-brand-accent uppercase tracking-[0.3em]">분석 {loadingStage + 1}단계 / 총 {loadingStages.length}단계</div>
                   <h3 className="text-4xl font-black tracking-tighter">{loadingStages[loadingStage].title}</h3>
                   <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-sm mx-auto">
                     {loadingStages[loadingStage].desc}
@@ -381,30 +381,17 @@ export default function App() {
               {/* Progress Bar */}
               <div className="w-full space-y-3">
                 <div className="flex justify-between items-end">
-                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Analysis Progress</span>
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">분석 진행률</span>
                   <span className="text-xs font-black text-brand-accent">{Math.round(((loadingStage + 1) / loadingStages.length) * 100)}%</span>
                 </div>
                 <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/5">
                   <motion.div 
                     initial={{ width: "0%" }}
                     animate={{ width: `${((loadingStage + 1) / loadingStages.length) * 100}%` }}
-                    className="h-full bg-brand-accent rounded-full shadow-[0_0_15px_rgba(37,99,235,0.5)]"
+                    className="h-full bg-brand-accent transition-all duration-500"
                   />
                 </div>
-                <p className="text-[10px] text-slate-500 text-center font-bold italic">
-                  * 정밀 분석을 위해 약 15~30초가 소요될 수 있습니다.
-                </p>
               </div>
-            </div>
-
-            {/* Bottom Status Grid */}
-            <div className="absolute bottom-12 left-0 right-0 px-12 grid grid-cols-2 md:grid-cols-4 gap-8 opacity-20">
-              {["NETWORK_SYNC", "GEMINI_COGNITIVE", "HEURISTIC_CHECK", "FINAL_SYNTHESIS"].map(s => (
-                <div key={s} className="flex flex-col gap-2">
-                  <div className="h-0.5 bg-white/20 w-full" />
-                  <span className="text-[8px] font-black tracking-[0.2em]">{s}</span>
-                </div>
-              ))}
             </div>
           </motion.div>
         )}
@@ -418,340 +405,415 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
     <motion.div 
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      className="min-h-screen bg-slate-50 flex flex-col pb-20"
+      className="min-h-screen bg-slate-50 flex flex-col pb-32"
     >
       {/* Header */}
-      <header className="bg-white border-b border-slate-200 px-8 py-5 sticky top-0 z-50 shadow-sm">
-        <div className="max-w-6xl mx-auto flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <CheckCircle2 className="w-6 h-6 text-brand-success" />
-            <h1 className="text-xl font-black text-slate-900 tracking-tight">최종 정밀 분석 보고서</h1>
+      <header className="bg-slate-900 border-b border-white/10 px-8 py-5 sticky top-0 z-50 backdrop-blur-md bg-slate-900/95 print:hidden">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          <div className="flex items-center gap-5">
+            <div className="w-11 h-11 bg-brand-accent rounded-2xl flex items-center justify-center shadow-2xl shadow-brand-accent/30 ring-1 ring-white/20">
+              <ClipboardCheck className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <div className="flex items-center gap-3">
+                <h1 className="text-xl font-black text-white tracking-tighter leading-none">장사비서 AI 컨설팅 리포트</h1>
+                <span className="px-2 py-0.5 bg-brand-accent/20 text-brand-accent rounded text-[9px] font-black uppercase tracking-tighter border border-brand-accent/30">대외비</span>
+              </div>
+              <p className="text-[10px] font-bold text-slate-500 uppercase tracking-[0.2em] mt-1.5 flex items-center gap-2">
+                <Activity className="w-3 h-3" /> 정밀 분석 엔진 v2.4.0
+              </p>
+            </div>
           </div>
-          <div className="flex gap-3">
+          <div className="flex gap-4 print:hidden">
             <button 
-              onClick={() => window.print()}
-              className="px-4 py-2 text-xs font-bold text-slate-600 border border-slate-200 rounded-lg hover:bg-slate-50 transition-all flex items-center gap-2"
+              onClick={() => {
+                window.focus();
+                window.print();
+              }}
+              className="px-5 py-2.5 text-xs font-black text-slate-300 border border-white/10 rounded-xl hover:bg-white/5 transition-all flex items-center gap-2.5 group"
             >
-              <FileText className="w-4 h-4" /> PDF 출력
+              <FileText className="w-4 h-4 text-slate-500 group-hover:text-brand-accent transition-colors" /> PDF 리포트 출력
             </button>
             <button 
               onClick={onReset}
-              className="btn-primary !py-2"
+              className="bg-brand-accent hover:bg-blue-500 text-white px-6 py-2.5 rounded-xl text-xs font-black shadow-2xl shadow-blue-900/40 transition-all active:scale-95 ring-1 ring-white/20"
             >
-              새 분석 시작
+              새로운 진단 시작
             </button>
           </div>
         </div>
       </header>
 
-      <main className="max-w-6xl mx-auto px-8 mt-12 space-y-8">
-        {/* Top Summary Card */}
-        <div className="bg-white border border-slate-200 rounded-2xl shadow-sm p-10 flex flex-col lg:flex-row items-center gap-16 overflow-hidden relative">
-          <div className="absolute top-0 right-0 w-64 h-64 bg-slate-50 rounded-full -mr-32 -mt-32 z-0" />
-          
-          <div className="relative z-10 shrink-0 flex flex-col items-center gap-6">
-             <div className="relative w-40 h-40">
-              <svg className="w-full h-full transform -rotate-90">
-                <circle
-                  cx="80" cy="80" r="74"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  className="text-slate-100"
-                />
-                <motion.circle
-                  cx="80" cy="80" r="74"
-                  stroke="currentColor"
-                  strokeWidth="8"
-                  fill="transparent"
-                  strokeDasharray="464.95"
-                  initial={{ strokeDashoffset: 464.95 }}
-                  animate={{ strokeDashoffset: 464.95 - (464.95 * report.overallScore) / 100 }}
-                  transition={{ duration: 1.5, ease: "easeOut" }}
-                  strokeLinecap="round"
-                  className="text-brand-accent"
-                />
-              </svg>
-              <div className="absolute inset-0 flex flex-col items-center justify-center">
-                <span className="text-4xl font-black text-slate-900">{report.overallScore}</span>
-                <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest mt-1">Health Score</span>
-              </div>
+      <main className="max-w-7xl mx-auto px-8 mt-12 space-y-12">
+        {/* Upper Hero Section: Overview & Core Logic */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Main Summary Hero */}
+          <div className="lg:col-span-8 bg-white border border-slate-200 rounded-3xl shadow-xl shadow-slate-200/50 p-10 relative overflow-hidden flex flex-col justify-between">
+            <div className="absolute top-0 right-0 p-12 opacity-[0.03] pointer-events-none">
+              <Zap className="w-64 h-64 text-brand-accent" />
             </div>
-
-            <div className="bg-slate-50 border border-slate-200 rounded-xl p-3 flex items-center gap-3 w-full">
-              <div className="p-2 bg-white rounded-lg border border-slate-100 shadow-sm">
-                <ShieldCheck className={`w-5 h-5 ${report.dataFidelity > 80 ? 'text-brand-success' : 'text-orange-500'}`} />
+            
+            <div className="relative z-10 space-y-10">
+              <div className="space-y-6">
+                <div className="flex items-center justify-between">
+                  <div className="inline-flex items-center gap-2.5 px-3.5 py-1.5 bg-blue-50 text-brand-accent rounded-full text-[10px] font-black uppercase tracking-widest border border-blue-100 shadow-sm">
+                    <Zap className="w-3.5 h-3.5" /> 핵심 인사이트 & 요약 전문
+                  </div>
+                  <span className="text-[10px] font-bold text-slate-300 font-mono tracking-widest uppercase">리포트 식별 코드: BA-2024-X49</span>
+                </div>
+                
+                <div className="relative pl-8 border-l-[6px] border-brand-accent">
+                  <Quote className="absolute -top-6 -left-8 w-14 h-14 text-slate-100/80 -z-10" />
+                  <h3 className="text-3xl font-black text-brand-accent italic leading-[1.1] mb-6 tracking-tight">
+                    "{report.veteranPunchline}"
+                  </h3>
+                  <div className="bg-slate-50/50 p-6 rounded-2xl border border-slate-100">
+                    <p className="text-lg font-bold text-slate-700 leading-relaxed max-w-3xl">
+                      {report.summary}
+                    </p>
+                  </div>
+                </div>
               </div>
-              <div>
-                <div className="text-[10px] font-black text-slate-400 uppercase tracking-tighter">진단 신뢰도</div>
-                <div className="text-sm font-black text-slate-800">{report.dataFidelity}%</div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-8 pt-4">
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-emerald-500/10 flex items-center justify-center">
+                      <TrendingUp className="w-3 h-3 text-emerald-600" />
+                    </div>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">핵심 경쟁력</span>
+                  </div>
+                  <ul className="space-y-3">
+                    {report.strengths.map((s, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <CheckCircle2 className="w-4 h-4 text-emerald-500 shrink-0 mt-0.5" />
+                        <span className="text-[13px] font-bold text-slate-700">{s}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+                <div className="space-y-4">
+                  <div className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-orange-500/10 flex items-center justify-center">
+                      <TrendingDown className="w-3 h-3 text-orange-600" />
+                    </div>
+                    <span className="text-xs font-black text-slate-400 uppercase tracking-widest">주요 병목 리스크</span>
+                  </div>
+                  <ul className="space-y-3">
+                    {report.weaknesses.map((w, i) => (
+                      <li key={i} className="flex gap-3 items-start">
+                        <AlertCircle className="w-4 h-4 text-orange-500 shrink-0 mt-0.5" />
+                        <span className="text-[13px] font-bold text-slate-700">{w}</span>
+                      </li>
+                    ))}
+                  </ul>
+                </div>
               </div>
             </div>
           </div>
 
-          <div className="h-[280px] w-full lg:w-[350px] relative z-10 hidden sm:block">
-            <ResponsiveContainer width="100%" height="100%">
-              <RadarChart data={report.analysisVectors}>
-                <PolarGrid stroke="#e2e8f0" />
-                <PolarAngleAxis 
-                  dataKey="subject" 
-                  tick={{ fill: '#64748b', fontSize: 11, fontWeight: 700 }}
-                />
-                <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
-                <Radar
-                  name="매장 상태"
-                  dataKey="score"
-                  stroke="#2563eb"
-                  fill="#2563eb"
-                  fillOpacity={0.15}
-                />
-              </RadarChart>
-            </ResponsiveContainer>
-          </div>
-
-          <div className="relative z-10 flex-1 space-y-6 text-center lg:text-left">
-            <div className="space-y-3">
-              <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-50 text-brand-accent rounded-full text-[11px] font-bold uppercase tracking-wider">
-                <Zap className="w-3.5 h-3.5" /> AI Diagnosis Summary
+          {/* Health Score & Fidelity Sidebar */}
+          <div className="lg:col-span-4 space-y-8">
+            {/* Score Card */}
+            <div className="bg-slate-900 rounded-3xl p-8 flex flex-col items-center justify-center relative overflow-hidden shadow-2xl">
+              <div className="absolute top-0 left-0 w-full h-1 bg-gradient-to-r from-brand-accent to-blue-400" />
+              <div className="relative w-44 h-44 mb-6">
+                <svg className="w-full h-full transform -rotate-90">
+                  <circle
+                    cx="88" cy="88" r="82"
+                    stroke="rgba(255,255,255,0.05)"
+                    strokeWidth="10"
+                    fill="transparent"
+                  />
+                  <motion.circle
+                    cx="88" cy="88" r="82"
+                    stroke="#2563eb"
+                    strokeWidth="10"
+                    fill="transparent"
+                    strokeDasharray="515.22"
+                    initial={{ strokeDashoffset: 515.22 }}
+                    animate={{ strokeDashoffset: 515.22 - (515.22 * report.overallScore) / 100 }}
+                    transition={{ duration: 2, ease: "easeOut" }}
+                    strokeLinecap="round"
+                    style={{ filter: 'drop-shadow(0 0 8px rgba(37,99,235,0.5))' }}
+                  />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-6xl font-black text-white">{report.overallScore}</span>
+                  <span className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] mt-1">매장 건강 지수</span>
+                </div>
               </div>
-              <div className="relative">
-                <Quote className="absolute -top-3 -left-4 w-8 h-8 text-slate-100 -z-10" />
-                <p className="text-lg font-black text-brand-accent italic leading-tight mb-2 pl-2">
-                  "{report.veteranPunchline}"
-                </p>
+              <div className="w-full bg-white/5 rounded-2xl p-4 border border-white/10 flex items-center justify-between">
+                <div>
+                  <div className="text-[9px] font-black text-slate-500 uppercase tracking-widest mb-0.5">분석 데이터 신뢰도</div>
+                  <div className="text-sm font-black text-white">{report.dataFidelity}% 데이터 정밀도</div>
+                </div>
+                <div className="w-12 h-1.5 bg-slate-800 rounded-full overflow-hidden">
+                  <motion.div 
+                    initial={{ width: 0 }}
+                    animate={{ width: `${report.dataFidelity}%` }}
+                    className={`h-full ${report.dataFidelity > 80 ? 'bg-emerald-500' : 'bg-orange-500'}`}
+                  />
+                </div>
               </div>
             </div>
-            <h2 className="text-3xl font-extrabold text-slate-900 leading-tight">
-              {report.summary}
-            </h2>
-            <div className="flex flex-wrap justify-center lg:justify-start gap-4">
-              <div className="space-y-1">
-                <span className="meta-label">핵심 강점</span>
-                <div className="flex flex-wrap gap-2">
-                  {report.strengths.map((s, i) => (
-                    <span key={i} className="px-3 py-1 bg-green-50 text-brand-success text-[12px] font-bold rounded-lg border border-green-100">
-                      {s}
-                    </span>
-                  ))}
-                </div>
+
+            {/* Radar Analysis */}
+            <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-lg shadow-slate-200/40">
+              <div className="text-center mb-4">
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">5대 핵심 지표 분석</span>
               </div>
-              <div className="space-y-1">
-                <span className="meta-label">경고 리스크</span>
-                <div className="flex flex-wrap gap-2">
-                  {report.weaknesses.map((w, i) => (
-                    <span key={i} className="px-3 py-1 bg-orange-50 text-orange-600 text-[12px] font-bold rounded-lg border border-orange-100">
-                      {w}
-                    </span>
-                  ))}
-                </div>
+              <div className="h-[240px] w-full">
+                <ResponsiveContainer width="100%" height="100%">
+                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={report.analysisVectors}>
+                    <PolarGrid stroke="#e2e8f0" />
+                    <PolarAngleAxis 
+                      dataKey="subject" 
+                      tick={{ fill: '#64748b', fontSize: 10, fontWeight: 800 }}
+                    />
+                    <Radar
+                      name="매장 지표"
+                      dataKey="score"
+                      stroke="#2563eb"
+                      fill="#2563eb"
+                      fillOpacity={0.15}
+                    />
+                  </RadarChart>
+                </ResponsiveContainer>
               </div>
             </div>
           </div>
         </div>
 
-        {/* Mid-level Analysis Grid */}
+        {/* Deep Dive Section: Layered Analysis & Vicious Cycle */}
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* 3-Layer Insight */}
-          <div className="card h-full">
-            <div className="bg-slate-50 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
+          {/* Layered Analysis */}
+          <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30">
+            <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex items-center justify-between">
+              <h3 className="font-black text-slate-900 flex items-center gap-2 text-sm uppercase tracking-tight">
                 <Search className="w-4 h-4 text-brand-accent" /> 3단계 심층 인과 관계 분석
               </h3>
+              <div className="flex gap-1">
+                {[1, 2, 3].map(n => <div key={n} className={`w-1.5 h-1.5 rounded-full ${n === 3 ? 'bg-brand-accent' : 'bg-slate-200'}`} />)}
+              </div>
             </div>
-            <div className="p-8 space-y-8 relative">
-              <div className="absolute left-10 top-12 bottom-12 w-[1px] bg-slate-100" />
+            <div className="p-10 space-y-10 relative">
+              <div className="absolute left-[3.25rem] top-12 bottom-12 w-[2px] bg-slate-100" />
               
-              <div className="flex gap-6 relative">
-                <div className="w-8 h-8 rounded-full bg-slate-50 border border-slate-200 flex items-center justify-center shrink-0 z-10">
-                  <div className="w-2 h-2 rounded-full bg-slate-400" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-black text-slate-400 uppercase tracking-widest mb-1.5">Layer 1. 표면적 현상</h4>
-                  <p className="text-sm font-medium text-slate-600 leading-relaxed">{report.threeLayerAnalysis.surface}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-6 relative">
-                <div className="w-8 h-8 rounded-full bg-blue-50 border border-blue-200 flex items-center justify-center shrink-0 z-10">
-                  <div className="w-2 h-2 rounded-full bg-blue-500" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-black text-blue-500 uppercase tracking-widest mb-1.5">Layer 2. 직접적인 원인</h4>
-                  <p className="text-sm font-bold text-slate-800 leading-relaxed">{report.threeLayerAnalysis.direct}</p>
-                </div>
-              </div>
-
-              <div className="flex gap-6 relative">
-                <div className="w-8 h-8 rounded-full bg-brand-primary flex items-center justify-center shrink-0 z-10 shadow-lg shadow-brand-primary/20">
-                  <Target className="w-4 h-4 text-white" />
-                </div>
-                <div>
-                  <h4 className="text-[11px] font-black text-slate-500 uppercase tracking-widest mb-1.5">Layer 3. 구조적·근본적 원인</h4>
-                  <div className="bg-slate-900 text-white p-4 rounded-xl text-sm leading-relaxed font-medium shadow-xl">
-                    {report.threeLayerAnalysis.structural}
+              {[
+                { title: "Layer 1. 표면적 현상", desc: report.threeLayerAnalysis.surface, color: "slate", icon: Activity },
+                { title: "Layer 2. 직접적인 원인", desc: report.threeLayerAnalysis.direct, color: "blue", icon: Target },
+                { title: "Layer 3. 구조적·근본적 원인", desc: report.threeLayerAnalysis.structural, color: "accent", icon: ShieldCheck }
+              ].map((layer, idx) => (
+                <div key={idx} className="flex gap-8 relative group">
+                  <div className={`w-10 h-10 rounded-xl ${
+                    layer.color === 'slate' ? 'bg-slate-100 text-slate-400' : 
+                    layer.color === 'blue' ? 'bg-blue-100 text-blue-600' : 'bg-slate-900 text-brand-accent'
+                  } flex items-center justify-center shrink-0 z-10 transition-transform group-hover:scale-110 shadow-sm shadow-black/5`}>
+                    <layer.icon className="w-5 h-5" />
+                  </div>
+                  <div className={idx === 2 ? "bg-slate-900 p-6 rounded-2xl text-white shadow-2xl flex-1 border border-white/5" : "flex-1 pt-1"}>
+                    <h4 className={`text-[10px] font-black uppercase tracking-[0.2em] mb-2 ${idx === 2 ? 'text-brand-accent' : 'text-slate-400'}`}>{layer.title}</h4>
+                    <p className={`text-[15px] leading-relaxed ${idx === 2 ? 'font-bold opacity-95' : 'font-medium text-slate-600'}`}>{layer.desc}</p>
                   </div>
                 </div>
-              </div>
+              ))}
             </div>
           </div>
 
-          {/* Vicious Cycle Explanation */}
-          <div className="card h-full flex flex-col">
-            <div className="bg-red-50/50 px-6 py-4 border-b border-red-100">
-              <h3 className="font-bold text-red-900 flex items-center gap-2">
-                <TrendingDown className="w-4 h-4 text-red-600" /> 운영상 악순환의 고리
-              </h3>
+          {/* Vicious Cycle (Critical Warning) */}
+          <div className="bg-red-50/20 border border-red-100 rounded-3xl p-10 flex flex-col items-center justify-center text-center relative overflow-hidden group">
+            <div className="absolute -top-12 -right-12 w-64 h-64 bg-red-100/30 rounded-full blur-3xl opacity-0 group-hover:opacity-100 transition-opacity duration-1000" />
+            <div className="w-24 h-24 bg-red-100 rounded-3xl flex items-center justify-center mb-8 rotate-3 shadow-lg shadow-red-200 relative">
+              <TrendingDown className="w-10 h-10 text-red-600" />
+              <div className="absolute -top-1 -right-1 w-4 h-4 bg-red-600 rounded-full animate-ping" />
             </div>
-            <div className="p-10 flex-1 flex flex-col items-center justify-center text-center">
-              <div className="w-24 h-24 bg-red-100 rounded-full flex items-center justify-center mb-6">
-                <TrendingDown className="w-10 h-10 text-red-600" />
-              </div>
-              <div className="max-w-md">
-                <p className="text-lg font-bold text-slate-900 mb-4 leading-snug">
-                  "{report.viciousCycle}"
-                </p>
-                <div className="h-px w-20 bg-red-200 mx-auto" />
-                <p className="mt-4 text-xs text-slate-400 leading-relaxed">
-                  한 문제가 다음 문제를 연鎖적으로 발생시켜 매장 경쟁력을 저하시키고 있습니다. <br/>근본 원인 제거를 통한 선순환 구조로의 전환이 시급합니다.
-                </p>
-              </div>
-            </div>
-          </div>
-        </div>
-
-        {/* BEP Analysis & Menu Strategy Grid */}
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-          {/* BEP Analysis */}
-          <div className="card h-full">
-            <div className="bg-slate-100/50 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <BarChart3 className="w-4 h-4 text-brand-accent" /> 손익분기점(BEP) 시뮬레이션
-              </h3>
-            </div>
-            <div className="p-8">
-              <div className="grid grid-cols-2 gap-6 mb-8">
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">고정비 비중</span>
-                  <div className="flex items-end gap-1">
-                    <span className="text-2xl font-black text-slate-900">{report.bepAnalysis.fixedCostRatio}%</span>
-                    <span className="text-[10px] text-slate-400 mb-1.5">(임대료/인건비 등)</span>
-                  </div>
-                </div>
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-100">
-                  <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">변동비 비중</span>
-                  <div className="flex items-end gap-1">
-                    <span className="text-2xl font-black text-slate-900">{report.bepAnalysis.variableCostRatio}%</span>
-                    <span className="text-[10px] text-slate-400 mb-1.5">(식자재/수수료 등)</span>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-6">
-                <div className="relative pt-6">
-                  <div className="absolute top-0 left-0 text-[11px] font-bold text-slate-500 uppercase tracking-tighter">Financial Status</div>
-                  <p className="text-sm font-medium text-slate-700 leading-relaxed bg-slate-50 p-4 rounded-lg border-l-4 border-brand-accent">
-                    {report.bepAnalysis.currentStatus}
-                  </p>
-                </div>
-                <div className="bg-blue-900 text-white p-6 rounded-2xl shadow-xl shadow-blue-900/10 relative overflow-hidden">
-                  <div className="absolute top-0 right-0 p-4 opacity-10">
-                    <TrendingUp className="w-20 h-20" />
-                  </div>
-                  <div className="relative z-10">
-                    <span className="text-[10px] font-black text-blue-300 uppercase tracking-[0.2em] block mb-2">권장 목표 매출 (월)</span>
-                    <p className="text-2xl font-black">{report.bepAnalysis.targetSales}</p>
-                    <p className="text-[11px] text-blue-300 mt-2 opacity-80">* 이 지점에 도달해야 안정적인 순수익 구조가 형성됩니다.</p>
-                  </div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Menu Strategy Matrix */}
-          <div className="card h-full">
-            <div className="bg-slate-100/50 px-6 py-4 border-b border-slate-200">
-              <h3 className="font-bold text-slate-900 flex items-center gap-2">
-                <LayoutGrid className="w-4 h-4 text-brand-accent" /> 메뉴 전략 매트릭스 (BCG)
-              </h3>
-            </div>
-            <div className="p-8">
-              <div className="grid grid-cols-2 gap-4">
-                {/* Star */}
-                <div className="bg-emerald-50 p-4 rounded-xl border border-emerald-100">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Star className="w-4 h-4 text-emerald-600 fill-emerald-600" />
-                    <span className="text-[11px] font-black text-emerald-800 uppercase tracking-tighter">STAR: 수익성+회전율</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.menuEngineering.star.map((m, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-white text-[11px] font-bold text-emerald-700 rounded border border-emerald-100">{m}</span>
-                    ))}
-                  </div>
-                </div>
-                {/* Plowhorse */}
-                <div className="bg-blue-50 p-4 rounded-xl border border-blue-100">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Activity className="w-4 h-4 text-blue-600" />
-                    <span className="text-[11px] font-black text-blue-800 uppercase tracking-tighter">Plow: 잘 팔리나 이익 낮음</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.menuEngineering.plowhorse.map((m, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-white text-[11px] font-bold text-blue-700 rounded border border-blue-100">{m}</span>
-                    ))}
-                  </div>
-                </div>
-                {/* Puzzle */}
-                <div className="bg-purple-50 p-4 rounded-xl border border-purple-100">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Search className="w-4 h-4 text-purple-600" />
-                    <span className="text-[11px] font-black text-purple-800 uppercase tracking-tighter">Puzzle: 이익 높으나 안 팔림</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.menuEngineering.puzzle.map((m, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-white text-[11px] font-bold text-purple-700 rounded border border-purple-100">{m}</span>
-                    ))}
-                  </div>
-                </div>
-                {/* Dog */}
-                <div className="bg-slate-50 p-4 rounded-xl border border-slate-200">
-                  <div className="flex items-center gap-2 mb-3">
-                    <Trash2 className="w-4 h-4 text-slate-500" />
-                    <span className="text-[11px] font-black text-slate-600 uppercase tracking-tighter">Dog: 전략적 제외/개편</span>
-                  </div>
-                  <div className="flex flex-wrap gap-1.5">
-                    {report.menuEngineering.dog.map((m, i) => (
-                      <span key={i} className="px-2 py-0.5 bg-white text-[11px] font-bold text-slate-500 rounded border border-slate-100">{m}</span>
-                    ))}
-                  </div>
-                </div>
-              </div>
-              <p className="mt-6 text-[11px] text-slate-400 italic leading-relaxed">
-                전문가 TIP: 'Star' 메뉴를 전방 배치하고, 'Plowhorse'는 원가 절감을, 'Puzzle'은 마케팅을 강화하며, 'Dog'는 과감히 리뉴얼하거나 제거해야 합니다.
+            <div className="max-w-md relative z-10">
+              <h3 className="text-[10px] font-black text-red-500 uppercase tracking-[0.3em] mb-4">구조적 결함 및 병목 경고</h3>
+              <p className="text-2xl font-black text-slate-900 mb-6 leading-tight tracking-tight italic">
+                "{report.viciousCycle}"
+              </p>
+              <div className="h-0.5 w-16 bg-red-200 mx-auto mb-6" />
+              <p className="text-sm font-bold text-slate-500 leading-relaxed max-w-sm mx-auto">
+                이 악순환의 고리를 끊지 못하면, 장기적으로 운영 효율이 하락하고 고정비 부담이 임계치를 넘게 됩니다.
               </p>
             </div>
           </div>
         </div>
 
-        {/* Action Checklist */}
-        <div className="card">
-          <div className="bg-slate-900 px-8 py-5 border-b border-white/10 flex items-center justify-between">
-            <h3 className="font-bold text-white flex items-center gap-2">
-              <ClipboardCheck className="w-5 h-5 text-brand-accent" /> 전문가 처방: 단계별 실행 체크리스트
-            </h3>
-            <span className="text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Priority Action Items</span>
-          </div>
-          <div className="p-8">
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-6">
-              {report.actionChecklist.map((item, i) => (
-                <div key={i} className="flex gap-4 p-4 rounded-xl hover:bg-slate-50 transition-colors group border border-transparent hover:border-slate-200">
-                  <div className="w-6 h-6 rounded border-2 border-slate-200 shrink-0 mt-0.5 group-hover:border-brand-accent transition-colors flex items-center justify-center text-[10px] font-black text-slate-300 group-hover:text-brand-accent">
-                    {i+1}
+        {/* Financials & Strategy Matrix */}
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* BEP Analysis */}
+          <div className="lg:col-span-5 bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30">
+            <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex items-center gap-2">
+              <BarChart3 className="w-4 h-4 text-brand-accent" />
+              <h3 className="font-black text-slate-900 text-sm uppercase tracking-tight">손익분기점(BEP) 분석</h3>
+            </div>
+            <div className="p-10 space-y-8">
+              <div className="grid grid-cols-2 gap-4">
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">고정비용 (Rent/Labor)</span>
+                  <div className="text-2xl font-black text-slate-900">{report.bepAnalysis.fixedCostRatio}%</div>
+                </div>
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
+                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">변동비용 (Food/Fee)</span>
+                  <div className="text-2xl font-black text-slate-900">{report.bepAnalysis.variableCostRatio}%</div>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <div className="p-5 bg-blue-50/50 rounded-2xl border border-blue-100/50">
+                  <h4 className="text-[10px] font-black text-brand-accent uppercase tracking-widest mb-2">재무 건전성 진단</h4>
+                  <p className="text-sm font-bold text-slate-700 leading-relaxed">{report.bepAnalysis.currentStatus}</p>
+                </div>
+                
+                <motion.div 
+                  whileHover={{ scale: 1.02 }}
+                  className="bg-slate-900 p-8 rounded-3xl shadow-2xl relative overflow-hidden group"
+                >
+                  <div className="absolute top-0 right-0 p-6 opacity-10 group-hover:scale-125 transition-transform">
+                    <TrendingUp className="w-24 h-24 text-brand-accent" />
                   </div>
-                  <div className="flex-1 space-y-1">
-                    <p className="text-[13px] font-bold text-slate-800 leading-snug group-hover:text-slate-900">{item.task}</p>
-                    <div className="flex items-center gap-2 text-[10px] font-black text-slate-400 uppercase">
-                      <Calendar className="w-3 h-3" /> 권장 기한: {item.deadline}
+                  <div className="relative z-10">
+                    <span className="text-[10px] font-black text-brand-accent uppercase tracking-[0.25em] block mb-2">월별 안정권 목표 매출액</span>
+                    <p className="text-4xl font-black text-white tracking-tighter">{report.bepAnalysis.targetSales}</p>
+                    <p className="text-[10px] text-slate-500 mt-4 font-bold">* 영업이익 극대화를 위한 1차 안정권 매출액입니다.</p>
+                  </div>
+                </motion.div>
+              </div>
+            </div>
+          </div>
+
+          {/* BCG Matrix (Strategy) */}
+          <div className="lg:col-span-7 bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30">
+            <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex justify-between items-center">
+              <div className="flex items-center gap-2">
+                <LayoutGrid className="w-4 h-4 text-brand-accent" />
+                <h3 className="font-black text-slate-900 text-sm uppercase tracking-tight">메뉴 엔지니어링 매트릭스 (BCG)</h3>
+              </div>
+              <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Growth vs Profit Matrix</span>
+            </div>
+            <div className="p-10">
+              <div className="relative">
+                {/* Axis Labels */}
+                <div className="absolute -left-8 top-1/2 -rotate-90 origin-center text-[8px] font-black text-slate-400 uppercase tracking-widest">분석 지표 : 수익성</div>
+                <div className="absolute -bottom-6 left-1/2 -translate-x-1/2 text-[8px] font-black text-slate-400 uppercase tracking-widest">분석 지표 : 판매량 및 대중성</div>
+                
+                <div className="grid grid-cols-2 gap-px bg-slate-200 border border-slate-200 rounded-2xl overflow-hidden shadow-inner">
+                  {/* Star */}
+                  <div className="bg-white p-7 group hover:bg-emerald-50 transition-colors border-b border-r border-slate-100">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-100 flex items-center justify-center shadow-sm">
+                        <Star className="w-5 h-5 text-emerald-600 fill-emerald-600" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-black text-emerald-900 uppercase tracking-tight">인기 메뉴 (STAR)</h5>
+                        <span className="text-[10px] text-emerald-600 font-bold tracking-tight">고수익·고판매 메뉴</span>
+                      </div>
                     </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {report.menuEngineering.star.map((m, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-white text-[11px] font-black text-emerald-700 rounded-xl border border-emerald-100 shadow-sm group-hover:border-emerald-200 transition-all hover:scale-105">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Puzzle */}
+                  <div className="bg-white p-7 group hover:bg-purple-50 transition-colors border-b border-slate-100">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-9 h-9 rounded-xl bg-purple-100 flex items-center justify-center shadow-sm">
+                        <Search className="w-5 h-5 text-purple-600" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-black text-purple-900 uppercase tracking-tight">잠재 수익 메뉴 (PUZZLE)</h5>
+                        <span className="text-[10px] text-purple-600 font-bold tracking-tight">고수익·저판매 메뉴</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {report.menuEngineering.puzzle.map((m, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-white text-[11px] font-black text-purple-700 rounded-xl border border-purple-100 shadow-sm group-hover:border-purple-200 transition-all hover:scale-105">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Plowhorse */}
+                  <div className="bg-white p-7 group hover:bg-blue-50 transition-colors border-r border-slate-100">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-9 h-9 rounded-xl bg-blue-100 flex items-center justify-center shadow-sm">
+                        <Activity className="w-5 h-5 text-blue-600" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-black text-blue-900 uppercase tracking-tight">박리다매 메뉴 (PLOWHORSE)</h5>
+                        <span className="text-[10px] text-blue-600 font-bold tracking-tight">저수익·고판매 메뉴</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {report.menuEngineering.plowhorse.map((m, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-white text-[11px] font-black text-blue-700 rounded-xl border border-blue-100 shadow-sm group-hover:border-blue-200 transition-all hover:scale-105">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                  {/* Dog */}
+                  <div className="bg-white p-7 group hover:bg-slate-50 transition-colors">
+                    <div className="flex items-center gap-3 mb-5">
+                      <div className="w-9 h-9 rounded-xl bg-slate-100 flex items-center justify-center shadow-sm">
+                        <Trash2 className="w-5 h-5 text-slate-500" />
+                      </div>
+                      <div>
+                        <h5 className="text-xs font-black text-slate-900 uppercase tracking-tight">정체 메뉴 (DOG)</h5>
+                        <span className="text-[10px] text-slate-500 font-bold tracking-tight">저수익·저판매 메뉴</span>
+                      </div>
+                    </div>
+                    <div className="flex flex-wrap gap-2.5">
+                      {report.menuEngineering.dog.map((m, i) => (
+                        <span key={i} className="px-3 py-1.5 bg-white text-[11px] font-black text-slate-400 rounded-xl border border-slate-100 shadow-sm group-hover:border-slate-200 transition-all hover:scale-105">{m}</span>
+                      ))}
+                    </div>
+                  </div>
+                </div>
+              </div>
+              <div className="mt-8 p-4 bg-slate-50 border border-slate-100 rounded-xl flex items-start gap-4">
+                <Info className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                <p className="text-[12px] font-bold text-slate-500 leading-relaxed italic">
+                  "Star 메뉴를 전방 배치하고, Plowhorse는 원가 절감을, Puzzle은 마케팅을 강화하며, Dog는 과감히 리뉴얼하거나 제거가 필요합니다."
+                </p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        {/* Action Timeline Section */}
+        <div className="bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30">
+          <div className="bg-slate-900 px-10 py-6 border-b border-white/10 flex items-center justify-between">
+            <h3 className="font-black text-white flex items-center gap-3">
+              <ClipboardCheck className="w-6 h-6 text-brand-accent" />
+              <span>전략적 실행 로드맵 : 24주 프로젝트</span>
+            </h3>
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded bg-brand-accent" />
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">최우선 실행 과제</span>
+              </div>
+            </div>
+          </div>
+          <div className="p-12">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-16 gap-y-10">
+              {report.actionChecklist.map((item, i) => (
+                <div key={i} className="flex gap-6 group relative">
+                  <div className="flex flex-col items-center shrink-0">
+                    <div className="w-10 h-10 rounded-2xl bg-white border-2 border-slate-100 flex items-center justify-center text-sm font-black text-slate-300 group-hover:border-brand-accent group-hover:text-brand-accent transition-all group-hover:rotate-6 shadow-sm">
+                      {i+1}
+                    </div>
+                    {i % 2 === 0 && <div className="flex-1 w-px bg-slate-100 my-2" />}
+                  </div>
+                  <div className="flex-1 space-y-2 pt-1">
+                    <div className="flex items-center justify-between">
+                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{i+1}단계</span>
+                      <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase">
+                        <Calendar className="w-3 h-3" /> {item.deadline}
+                      </div>
+                    </div>
+                    <p className="text-[15px] font-black text-slate-800 leading-tight group-hover:text-brand-accent transition-colors">
+                      {item.task}
+                    </p>
                   </div>
                 </div>
               ))}
@@ -759,77 +821,78 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
           </div>
         </div>
 
-        {/* Detailed Solutions Tab-like Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-          {/* Marketing Solution */}
-          <div className="card">
-            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-              <div className="p-2 bg-purple-50 rounded-lg">
-                <Globe className="w-5 h-5 text-purple-600" />
+        {/* Detailed Prescription Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pb-12">
+          {/* Solution Cards */}
+          {[
+            { title: "마케팅 침투 전략", icon: Globe, color: "purple", content: report.marketingStrategy },
+            { title: "운영 최적화 설계", icon: Settings2, color: "emerald", list: report.operationTips },
+            { title: "베테랑의 마지막 조언", icon: Users2, color: "blue", quote: report.ownerMindsetFeedback }
+          ].map((card, i) => (
+            <div key={i} className={`bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/30 flex flex-col h-full ${card.quote ? 'bg-slate-900 text-white border-none' : ''}`}>
+              <div className={`p-8 border-b ${card.quote ? 'border-white/10' : 'border-slate-100'} flex items-center gap-4`}>
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${
+                  card.color === 'purple' ? 'bg-purple-100 text-purple-600' :
+                  card.color === 'emerald' ? 'bg-emerald-100 text-emerald-600' : 'bg-brand-accent/20 text-brand-accent'
+                }`}>
+                  <card.icon className="w-5 h-5" />
+                </div>
+                <h4 className="font-black tracking-tight">{card.title}</h4>
               </div>
-              <h4 className="font-extrabold text-slate-900">맞춤형 마케팅 솔루션</h4>
-            </div>
-            <div className="p-6">
-              <p className="text-sm text-slate-600 leading-relaxed whitespace-pre-wrap">{report.marketingStrategy}</p>
-            </div>
-          </div>
-
-          {/* Operational Efficiency */}
-          <div className="card">
-            <div className="p-6 border-b border-slate-100 flex items-center gap-3">
-              <div className="p-2 bg-emerald-50 rounded-lg">
-                <Settings2 className="w-5 h-5 text-emerald-600" />
+              <div className="p-8 flex-1">
+                {card.content && <p className="text-sm font-bold text-slate-600 leading-relaxed whitespace-pre-wrap">{card.content}</p>}
+                {card.list && (
+                  <ul className="space-y-4">
+                    {card.list.map((tip, idx) => (
+                      <li key={idx} className="flex gap-4 items-start group">
+                        <div className="w-5 h-5 rounded-full bg-emerald-50 text-emerald-600 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5 border border-emerald-100 group-hover:scale-110 transition-transform">{idx+1}</div>
+                        <p className="text-sm font-bold text-slate-600 leading-relaxed">{tip}</p>
+                      </li>
+                    ))}
+                  </ul>
+                )}
+                {card.quote && (
+                  <div className="flex flex-col items-center justify-center h-full text-center py-6">
+                    <MessageSquareQuote className="w-12 h-12 text-brand-accent/30 mb-8" />
+                    <p className="text-lg font-bold italic leading-relaxed opacity-95">
+                      "{card.quote}"
+                    </p>
+                  </div>
+                )}
               </div>
-              <h4 className="font-extrabold text-slate-900">운영 효율화 처방</h4>
             </div>
-            <div className="p-6">
-              <ul className="space-y-4">
-                {report.operationTips.map((tip, i) => (
-                  <li key={i} className="flex gap-3 items-start">
-                    <div className="w-5 h-5 rounded-full bg-emerald-100 text-emerald-600 flex items-center justify-center text-[10px] font-black shrink-0 mt-0.5">{i+1}</div>
-                    <p className="text-sm text-slate-600 leading-relaxed">{tip}</p>
-                  </li>
-                ))}
-              </ul>
-            </div>
-          </div>
-
-          {/* Owner Feedback */}
-          <div className="card bg-brand-primary text-white">
-            <div className="p-6 border-b border-white/10 flex items-center gap-3">
-              <div className="p-2 bg-white/10 rounded-lg">
-                <Users2 className="w-5 h-5 text-brand-accent" />
-              </div>
-              <h4 className="font-extrabold">전문가 조언</h4>
-            </div>
-            <div className="p-10 text-center flex flex-col items-center">
-              <MessageSquareQuote className="w-8 h-8 text-brand-accent/40 mb-6" />
-              <p className="text-base font-medium italic leading-relaxed opacity-90">
-                "{report.ownerMindsetFeedback}"
-              </p>
-            </div>
-          </div>
+          ))}
         </div>
 
-        {/* Success Roadmap / 6 Month Goal */}
-        <div className="bg-brand-accent rounded-2xl p-10 text-white shadow-2xl shadow-blue-600/20">
-          <div className="flex flex-col md:flex-row items-center gap-10">
-            <div className="shrink-0 w-20 h-20 bg-white/20 rounded-2xl flex items-center justify-center border border-white/30 backdrop-blur-md">
-              <Target className="w-10 h-10 text-white" />
+        {/* Final Vision Board */}
+        <motion.div 
+          whileHover={{ y: -5 }}
+          className="bg-brand-accent rounded-[32px] p-12 text-white shadow-2xl shadow-blue-500/40 relative overflow-hidden group"
+        >
+          <div className="absolute top-0 right-0 w-96 h-96 bg-white/10 rounded-full blur-3xl -mr-48 -mt-48 transition-all group-hover:scale-150 duration-1000" />
+          <div className="absolute bottom-0 left-0 w-64 h-64 bg-black/10 rounded-full blur-3xl -ml-32 -mb-32" />
+          
+          <div className="flex flex-col md:flex-row items-center gap-12 relative z-10">
+            <div className="shrink-0 w-24 h-24 bg-white/10 rounded-[28px] flex items-center justify-center border border-white/25 backdrop-blur-xl shadow-2xl group-hover:rotate-12 transition-transform duration-500">
+              <Target className="w-12 h-12 text-white" />
             </div>
-            <div className="space-y-3">
-              <span className="text-[11px] font-black uppercase tracking-[0.3em] text-white/70">6-Month Strategic Roadmap</span>
-              <h4 className="text-2xl font-black leading-tight italic">
+            <div className="space-y-6 text-center md:text-left flex-1">
+              <div className="inline-flex items-center gap-3 px-3 py-1 bg-white/10 rounded-full border border-white/20">
+                <div className="w-1.5 h-1.5 rounded-full bg-blue-300 animate-pulse" />
+                <span className="text-[10px] font-black uppercase tracking-[0.4em] text-blue-100">미래 달성 지표 : 6개월(180일) 후</span>
+              </div>
+              <h4 className="text-4xl md:text-5xl font-black leading-tight tracking-tighter italic">
                 {report.sixMonthGoalAction}
               </h4>
+              <p className="text-blue-100/70 font-bold max-w-2xl">이 리포트의 처방을 완수했을 때 맞이하게 될 매장의 모습입니다. 변화는 이미 시작되었습니다.</p>
             </div>
           </div>
-        </div>
+        </motion.div>
 
-        <div className="text-center py-12 border-t border-slate-200">
-          <p className="text-[11px] text-slate-400 font-mono uppercase tracking-widest leading-relaxed">
-            이 리포트는 55가지 고유 지표를 기반으로 한 AI 전문가 시스템의 분석 결과입니다. <br/>
-            모든 분석 자료는 실제 현장 상황에 맞춰 유동적으로 적용하시기 바랍니다.
+        <div className="text-center py-16 opacity-40">
+          <p className="text-[10px] font-black font-mono uppercase tracking-[0.4em] leading-relaxed">
+            AI 장사 비서 • 정밀 진단 시스템 • 대외비 리포트 <br/>
+            © 2024 PRECISION DATA LAB. 모든 권리 보유.
           </p>
         </div>
       </main>
