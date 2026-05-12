@@ -117,8 +117,9 @@ ${dataSummary}
                 properties: {
                   task: { type: Type.STRING, description: "실행 과제" },
                   deadline: { type: Type.STRING, description: "권장 기한" },
+                  priority: { type: Type.STRING, description: "우선순위 (최우선/우선/보통)" },
                 },
-                required: ["task", "deadline"],
+                required: ["task", "deadline", "priority"],
               },
             },
             analysisVectors: {
@@ -129,9 +130,50 @@ ${dataSummary}
                   subject: { type: Type.STRING, description: "분석 지표 (예: 수익성, 메뉴 경쟁력, 고객 응집도, 운영 효율성, 마케팅 활동성)" },
                   score: { type: Type.NUMBER, description: "점수 (0-100)" },
                   fullMark: { type: Type.NUMBER, description: "기준 점수 (100)" },
+                  insight: { type: Type.STRING, description: "해당 지표에 대한 짧고 강렬한 분석 의견 (20자 내외)" },
                 },
-                required: ["subject", "score", "fullMark"],
+                required: ["subject", "score", "fullMark", "insight"],
               },
+            },
+            financialDetail: {
+              type: Type.OBJECT,
+              properties: {
+                fixedCostBreakdown: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      label: { type: Type.STRING, description: "고정비 항목 명칭" },
+                      value: { type: Type.STRING, description: "항목별 상태 또는 특징 (예: '매출 대비 높음', '적정 수준')" },
+                    },
+                    required: ["label", "value"],
+                  }
+                },
+                variableCostBreakdown: {
+                  type: Type.ARRAY,
+                  items: {
+                    type: Type.OBJECT,
+                    properties: {
+                      label: { type: Type.STRING, description: "변동비 항목 명칭" },
+                      value: { type: Type.STRING, description: "항목별 상태 또는 특징" },
+                    },
+                    required: ["label", "value"],
+                  }
+                },
+              },
+              required: ["fixedCostBreakdown", "variableCostBreakdown"],
+            },
+            successMetrics: {
+              type: Type.ARRAY,
+              items: {
+                type: Type.OBJECT,
+                properties: {
+                  label: { type: Type.STRING, description: "지표 명칭 (예: 월 매출, 테이블 회전율, 단골 비중)" },
+                  before: { type: Type.STRING, description: "현재 수치" },
+                  after: { type: Type.STRING, description: "6개월 후 목표 수치" },
+                },
+                required: ["label", "before", "after"],
+              }
             },
             dataFidelity: { type: Type.NUMBER, description: "진단 신뢰도 점수 (0-100)" },
             veteranPunchline: { type: Type.STRING, description: "베테랑 전문가의 짧고 강렬한 촌철살인 한마디" },
@@ -140,7 +182,7 @@ ${dataSummary}
             "overallScore", "summary", "strengths", "weaknesses", "threeLayerAnalysis",
             "viciousCycle", "riskPriorities", "marketingStrategy", "operationTips",
             "ownerMindsetFeedback", "sixMonthGoalAction", "bepAnalysis", "menuEngineering", "actionChecklist",
-            "analysisVectors", "dataFidelity", "veteranPunchline"
+            "analysisVectors", "financialDetail", "successMetrics", "dataFidelity", "veteranPunchline"
           ],
         },
       },

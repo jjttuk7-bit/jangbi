@@ -563,9 +563,9 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
               <div className="text-center mb-4">
                 <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">5대 핵심 지표 분석</span>
               </div>
-              <div className="h-[240px] w-full">
+              <div className="h-[220px] w-full">
                 <ResponsiveContainer width="100%" height="100%">
-                  <RadarChart cx="50%" cy="50%" outerRadius="80%" data={report.analysisVectors}>
+                  <RadarChart cx="50%" cy="50%" outerRadius="75%" data={report.analysisVectors}>
                     <PolarGrid stroke="#e2e8f0" />
                     <PolarAngleAxis 
                       dataKey="subject" 
@@ -580,6 +580,17 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                     />
                   </RadarChart>
                 </ResponsiveContainer>
+              </div>
+              <div className="mt-4 space-y-2 border-t border-slate-50 pt-4">
+                {report.analysisVectors.map((v, i) => (
+                  <div key={i} className="flex items-center justify-between group">
+                    <span className="text-[10px] font-black text-slate-400 group-hover:text-brand-accent transition-colors">{v.subject}</span>
+                    <div className="flex items-center gap-2">
+                       <span className="text-[11px] font-bold text-slate-600 italic">"{v.insight}"</span>
+                       <span className="text-[11px] font-black text-slate-900 w-6 text-right">{v.score}</span>
+                    </div>
+                  </div>
+                ))}
               </div>
             </div>
           </div>
@@ -651,13 +662,33 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
             </div>
             <div className="p-10 space-y-8">
               <div className="grid grid-cols-2 gap-4">
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">고정비용 (Rent/Labor)</span>
-                  <div className="text-2xl font-black text-slate-900">{report.bepAnalysis.fixedCostRatio}%</div>
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">고정비 분석</span>
+                    <div className="text-2xl font-black text-slate-900 mb-3">{report.bepAnalysis.fixedCostRatio}%</div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {report.financialDetail.fixedCostBreakdown.map((item, i) => (
+                      <div key={i} className="flex justify-between items-center text-[9px] font-bold">
+                        <span className="text-slate-400">{item.label}</span>
+                        <span className="text-slate-600">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100">
-                  <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-2">변동비용 (Food/Fee)</span>
-                  <div className="text-2xl font-black text-slate-900">{report.bepAnalysis.variableCostRatio}%</div>
+                <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
+                  <div>
+                    <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">변동비 분석</span>
+                    <div className="text-2xl font-black text-slate-900 mb-3">{report.bepAnalysis.variableCostRatio}%</div>
+                  </div>
+                  <div className="space-y-1.5">
+                    {report.financialDetail.variableCostBreakdown.map((item, i) => (
+                      <div key={i} className="flex justify-between items-center text-[9px] font-bold">
+                        <span className="text-slate-400">{item.label}</span>
+                        <span className="text-slate-600">{item.value}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
               </div>
 
@@ -806,7 +837,15 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                   </div>
                   <div className="flex-1 space-y-2 pt-1">
                     <div className="flex items-center justify-between">
-                      <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{i+1}단계</span>
+                      <div className="flex items-center gap-2">
+                        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{i+1}단계</span>
+                        <span className={`px-1.5 py-0.5 rounded text-[8px] font-black uppercase tracking-tight ${
+                          item.priority === '최우선' ? 'bg-red-500 text-white' : 
+                          item.priority === '우선' ? 'bg-orange-500 text-white' : 'bg-slate-200 text-slate-600'
+                        }`}>
+                          {item.priority}
+                        </span>
+                      </div>
                       <div className="flex items-center gap-1.5 px-2 py-0.5 bg-slate-900 text-white rounded text-[10px] font-black uppercase">
                         <Calendar className="w-3 h-3" /> {item.deadline}
                       </div>
@@ -884,7 +923,19 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
               <h4 className="text-4xl md:text-5xl font-black leading-tight tracking-tighter italic">
                 {report.sixMonthGoalAction}
               </h4>
-              <p className="text-blue-100/70 font-bold max-w-2xl">이 리포트의 처방을 완수했을 때 맞이하게 될 매장의 모습입니다. 변화는 이미 시작되었습니다.</p>
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mt-8 pt-8 border-t border-white/10">
+                {report.successMetrics.map((m, i) => (
+                  <div key={i} className="space-y-1">
+                    <span className="text-[9px] font-black text-blue-200/60 uppercase tracking-widest block">{m.label}</span>
+                    <div className="flex items-baseline gap-2">
+                      <span className="text-[10px] text-blue-300/50 line-through font-bold">{m.before}</span>
+                      <ChevronRight className="w-2.5 h-2.5 text-brand-accent" />
+                      <span className="text-xl font-black text-white">{m.after}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <p className="text-blue-100/70 font-bold max-w-2xl mt-6">이 리포트의 처방을 완수했을 때 맞이하게 될 매장의 모습입니다. 변화는 이미 시작되었습니다.</p>
             </div>
           </div>
         </motion.div>

@@ -59,11 +59,22 @@ export interface DiagnosisReport {
   actionChecklist: {
     task: string;
     deadline: string;
+    priority: "최우선" | "우선" | "보통";
   }[];
   analysisVectors: {
     subject: string;
     score: number;
     fullMark: number;
+    insight: string; // 각 축에 대한 심층 분석 텍스트 추가
+  }[];
+  financialDetail: {
+    fixedCostBreakdown: { label: string; value: string }[];
+    variableCostBreakdown: { label: string; value: string }[];
+  };
+  successMetrics: {
+    label: string;
+    before: string;
+    after: string;
   }[];
   dataFidelity: number; // 0-100
   veteranPunchline: string; // 촌철살인 한마디
