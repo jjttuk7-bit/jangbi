@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { 
   ClipboardCheck, 
@@ -44,6 +44,27 @@ export default function App() {
   const [data, setData] = useState<DiagnosisData>({});
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [report, setReport] = useState<DiagnosisReport | null>(null);
+  const [loadingStage, setLoadingStage] = useState(0);
+
+  const loadingStages = [
+    { title: "데이터 구조 파악", desc: "사용자가 입력한 55가지 지표의 정합성을 검토하고 있습니다." },
+    { title: "손익분기 분석", desc: "임대료, 인건비, 원가율을 바탕으로 매장의 생존선을 계산합니다." },
+    { title: "메뉴 공학 설계", desc: "BCG Matrix 로직을 가동하여 주력 메뉴의 수익성을 재배치합니다." },
+    { title: "시장 점유 전략", desc: "상권 데이터와 유입 경로를 결합하여 공격적인 마케팅 포인트를 찾습니다." },
+    { title: "현실적 처방전 생성", desc: "사장님의 여건에 맞는 6개월 단위 액션 플랜을 구성하고 있습니다." },
+    { title: "베테랑 조언 요약", desc: "마지막으로 가장 뼈아픈 핵심 약점을 찾아 촌철살인 한마디를 준비합니다." }
+  ];
+
+  useEffect(() => {
+    let interval: NodeJS.Timeout;
+    if (isSubmitting) {
+      setLoadingStage(0);
+      interval = setInterval(() => {
+        setLoadingStage((prev) => (prev < loadingStages.length - 1 ? prev + 1 : prev));
+      }, 4000);
+    }
+    return () => clearInterval(interval);
+  }, [isSubmitting, loadingStages.length]);
 
   const sections = useMemo(() => {
     return Object.values(DiagnosisSection);
@@ -322,36 +343,67 @@ export default function App() {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 bg-slate-900/95 backdrop-blur-md z-[100] flex flex-col items-center justify-center text-white px-8"
+            className="fixed inset-0 bg-slate-900 z-[100] flex flex-col items-center justify-center text-white px-8 overflow-hidden"
           >
-            <div className="relative mb-12">
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ repeat: Infinity, duration: 3, ease: "linear" }}
-                className="w-24 h-24 border-4 border-slate-700 border-t-brand-accent rounded-full"
-              />
-              <Activity className="absolute inset-0 m-auto w-10 h-10 text-brand-accent animate-pulse" />
-            </div>
+            {/* Background Decor */}
+            <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] bg-brand-accent/5 rounded-full blur-[120px]" />
             
-            <h3 className="text-3xl font-black mb-8 tracking-tight text-center">심층 데이터 엔진 가동 중</h3>
-            
-            <div className="space-y-4 max-w-lg w-full">
-              {[
-                "상권 인구 통계 및 경쟁사 밀집도 분석 중...",
-                "재무제표 기반 구조적 손익 불균형 감지 중...",
-                "운영 방식에 따른 잠재적 리스크 모델링...",
-                "베테랑 전문가 로직 기반 맞춤형 처방전 생성..."
-              ].map((text, idx) => (
+            <div className="relative z-10 w-full max-w-lg flex flex-col items-center">
+              <div className="relative mb-16">
                 <motion.div
-                  key={idx}
-                  initial={{ opacity: 0, x: -10 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  transition={{ delay: idx * 1.2 }}
-                  className="flex items-center gap-4 text-slate-400 text-[13px] py-4 border-b border-white/5"
+                  animate={{ rotate: 360 }}
+                  transition={{ repeat: Infinity, duration: 4, ease: "linear" }}
+                  className="w-32 h-32 border-2 border-slate-800 border-t-brand-accent rounded-full"
+                />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <div className="w-20 h-20 bg-slate-800/50 rounded-full backdrop-blur-sm flex items-center justify-center border border-white/5">
+                    <Activity className="w-8 h-8 text-brand-accent animate-pulse" />
+                  </div>
+                </div>
+              </div>
+              
+              <div className="text-center space-y-4 mb-12">
+                <motion.div
+                  key={loadingStage}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -20 }}
+                  className="space-y-2"
                 >
-                  <div className="w-5 h-5 rounded bg-brand-accent/20 text-brand-accent flex items-center justify-center text-[10px] font-black shrink-0">0{idx+1}</div>
-                  <span className="font-medium">{text}</span>
+                  <div className="text-[10px] font-black text-brand-accent uppercase tracking-[0.3em]">Stage {loadingStage + 1} / {loadingStages.length}</div>
+                  <h3 className="text-4xl font-black tracking-tighter">{loadingStages[loadingStage].title}</h3>
+                  <p className="text-slate-400 text-sm font-medium leading-relaxed max-w-sm mx-auto">
+                    {loadingStages[loadingStage].desc}
+                  </p>
                 </motion.div>
+              </div>
+
+              {/* Progress Bar */}
+              <div className="w-full space-y-3">
+                <div className="flex justify-between items-end">
+                  <span className="text-[10px] font-bold text-slate-500 uppercase tracking-widest">Analysis Progress</span>
+                  <span className="text-xs font-black text-brand-accent">{Math.round(((loadingStage + 1) / loadingStages.length) * 100)}%</span>
+                </div>
+                <div className="h-1.5 w-full bg-slate-800 rounded-full overflow-hidden p-0.5 border border-white/5">
+                  <motion.div 
+                    initial={{ width: "0%" }}
+                    animate={{ width: `${((loadingStage + 1) / loadingStages.length) * 100}%` }}
+                    className="h-full bg-brand-accent rounded-full shadow-[0_0_15px_rgba(37,99,235,0.5)]"
+                  />
+                </div>
+                <p className="text-[10px] text-slate-500 text-center font-bold italic">
+                  * 정밀 분석을 위해 약 15~30초가 소요될 수 있습니다.
+                </p>
+              </div>
+            </div>
+
+            {/* Bottom Status Grid */}
+            <div className="absolute bottom-12 left-0 right-0 px-12 grid grid-cols-2 md:grid-cols-4 gap-8 opacity-20">
+              {["NETWORK_SYNC", "GEMINI_COGNITIVE", "HEURISTIC_CHECK", "FINAL_SYNTHESIS"].map(s => (
+                <div key={s} className="flex flex-col gap-2">
+                  <div className="h-0.5 bg-white/20 w-full" />
+                  <span className="text-[8px] font-black tracking-[0.2em]">{s}</span>
+                </div>
               ))}
             </div>
           </motion.div>
