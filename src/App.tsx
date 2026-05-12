@@ -47,10 +47,10 @@ export default function App() {
   const [loadingStage, setLoadingStage] = useState(0);
 
   const loadingStages = [
-    { title: "데이터 구조 파악", desc: "사용자가 입력한 55가지 지표의 정합성을 검토하고 있습니다." },
+    { title: "매장 지표 구조 파악", desc: "사용자가 입력한 55가지 분석 항목의 정합성을 검토하고 있습니다." },
     { title: "손익분기 분석", desc: "임대료, 인건비, 원가율을 바탕으로 매장의 생존선을 계산합니다." },
     { title: "메뉴 공학 설계", desc: "BCG Matrix 로직을 가동하여 주력 메뉴의 수익성을 재배치합니다." },
-    { title: "시장 점유 전략", desc: "상권 데이터와 유입 경로를 결합하여 공격적인 마케팅 포인트를 찾습니다." },
+    { title: "시장 점유 전략", desc: "상권 정보와 유입 경로를 결합하여 공격적인 마케팅 포인트를 찾습니다." },
     { title: "현실적 처방전 생성", desc: "사장님의 여건에 맞는 6개월 단위 액션 플랜을 구성하고 있습니다." },
     { title: "베테랑 조언 요약", desc: "마지막으로 가장 뼈아픈 핵심 약점을 찾아 촌철살인 한마디를 준비합니다." }
   ];
@@ -297,7 +297,7 @@ export default function App() {
                       className="btn-accent"
                     >
                       {isSubmitting ? (
-                        <><Loader2 className="w-4 h-4 animate-spin" /> 데이터 심층 분석 중...</>
+                        <><Loader2 className="w-4 h-4 animate-spin" /> 매장 현황 심층 분석 중...</>
                       ) : (
                         <><BarChart3 className="w-4 h-4" /> 장사 비서 리포트 생성</>
                       )}

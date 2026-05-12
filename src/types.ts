@@ -1,12 +1,12 @@
 export enum DiagnosisSection {
-  BASIC_INFO = "SECTION 1. 기본 신상 정보",
-  SALES_PROFIT = "SECTION 2. 매출 & 수익 데이터",
-  MENU_PRODUCT = "SECTION 3. 메뉴 & 상품 구성",
-  CUSTOMER_DATA = "SECTION 4. 고객 데이터",
-  COMPETITION = "SECTION 5. 경쟁 환경",
-  MARKETING = "SECTION 6. 마케팅 & 온라인 존재감",
-  OPERATIONS = "SECTION 7. 운영 & 내부 역량",
-  OWNER_MINDSET = "SECTION 8. 사장의 목표 & 심리 상태",
+  BASIC_INFO = "SECTION 1. 매장 기본 정보",
+  SALES_PROFIT = "SECTION 2. 매출 & 수익 현황",
+  MENU_PRODUCT = "SECTION 3. 메뉴 & 판매 구성",
+  CUSTOMER_DATA = "SECTION 4. 고객 흐름 & 단골 현황",
+  COMPETITION = "SECTION 5. 주변 상권 & 경쟁 매장",
+  MARKETING = "SECTION 6. 홍보 & 온라인 반응",
+  OPERATIONS = "SECTION 7. 매장 운영 상태",
+  OWNER_MINDSET = "SECTION 8. 사장님의 목표 & 운영 방향",
 }
 
 export interface DiagnosisItem {
