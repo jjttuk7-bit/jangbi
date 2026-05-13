@@ -49,33 +49,114 @@ export interface DiagnosisReport {
     targetSales: string;
     fixedCostRatio: number;
     variableCostRatio: number;
+    contributionMarginRatio: number; // 공헌이익률 추가
   };
   menuEngineering: {
-    star: string[];     // 인지도 높고 수익성 높음
-    plowhorse: string[]; // 인지도 높으나 수익성 낮음
-    puzzle: string[];    // 인지도 낮으나 수익성 높음
-    dog: string[];       // 인지도 낮고 수익성 낮음
+    star: string[];     
+    plowhorse: string[]; 
+    puzzle: string[];    
+    dog: string[];       
+    categorizationLogic: string; 
+    dataQualityContext: string; 
+    inventoryMix: { category: string; ratio: number; insight: string }[]; 
+    costBreakdown: { menuName: string; rawMaterialRatio: number; laborRatio: number; netProfitRatio: number }[]; // 메뉴별 원가 분해표
   };
+  efficiencyMetrics: {
+    label: string;
+    value: string;
+    insight: string;
+  }[]; 
+  revenueHeatmap: { timeSlot: string; weekdaySales: string; weekendSales: string; laborCost: string }[]; // 요일별 매출 히트맵
+  customerLogistics: {
+    retentionRate: string;
+    tablesPerStaff: string;
+    processingTime: string;
+    insight: string;
+  }; // 고객 및 직원 생산성 지표
+  competitorAnalysis: {
+    competitionLevel: string;
+    marketPosition: string;
+    neighborStatus: string;
+    detailedComparison: { factor: string; myStore: string; competitor: string }[]; 
+    mysteryShopping: { storeName: string; strength: string; weakness: string; priceLevel: string; rotationRate: string }[]; // 경쟁사 미스터리 쇼핑
+  };
+  citations: {
+    source: string;
+    description: string;
+  }[];
   actionChecklist: {
     task: string;
     deadline: string;
     priority: "최우선" | "우선" | "보통";
+    owner: string; 
+    kpi: string; 
+    barrierResponse: string; 
+    riskScenario: string; // 역방향 시나리오 (실패 시 대응)
   }[];
   analysisVectors: {
     subject: string;
     score: number;
     fullMark: number;
-    insight: string; // 각 축에 대한 심층 분석 텍스트 추가
+    insight: string; 
+    weight: number; 
   }[];
   financialDetail: {
     fixedCostBreakdown: { label: string; value: string }[];
     variableCostBreakdown: { label: string; value: string }[];
+    profitWaterfall: { label: string; value: string; type: "plus" | "minus" | "total" }[];
+    cashFlowInsight: string; 
+    laborDetail: { category: string; amount: string; description: string }[]; 
+    monthlyTrend: { month: string; sales: string; profit: string }[]; // 월별 손익 추이
   };
+  strategicRisks: {
+    risk: string;
+    impact: string;
+    prevention: string;
+  }[]; // 전략적 역방향 리스크
   successMetrics: {
     label: string;
     before: string;
     after: string;
   }[];
+  scoreInterpretation: {
+    label: string;
+    description: string;
+    calculationLogic: string; 
+    calculationDetail: string; // 세분화된 산출 근거 (각 항목 점수 등)
+  };
+  ownerPersona: {
+    type: string;
+    description: string;
+    advice: string;
+  };
+  storePersona: {
+    type: string;
+    description: string;
+  };
+  aiManagerPoints: {
+    title: string;
+    comment: string;
+  }[];
+  hourlyRevenueAnalysis: {
+    timeSlot: string;
+    flow: string;
+    consumptionPsychology: string;
+    strategy: string;
+  }[];
+  coreStrategy: string; // [이번 매장의 핵심 해법 1줄]
+  monetaryEffect: {
+    action: string;
+    expectedGain: string;
+  }[]; // [돈으로 번역되는 효과]
+  topThreePriorities: {
+    rank: number;
+    task: string;
+    reason: string;
+  }[]; // [실행 순서 3단 압축]
+  ownerResistancePrediction: {
+    prediction: string;
+    reason: string;
+    countermeasure: string;
+  }; // [사장 행동 예측 & 대응 방안]
   dataFidelity: number; // 0-100
-  veteranPunchline: string; // 촌철살인 한마디
 }

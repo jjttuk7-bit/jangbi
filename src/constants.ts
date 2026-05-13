@@ -19,7 +19,7 @@ export const DIAGNOSIS_ITEMS: DiagnosisItem[] = [
   { id: 13, section: DiagnosisSection.SALES_PROFIT, label: "평균 테이블 회전율", type: "number", placeholder: "일 평균 회전수", description: "컨설팅 Tip: 피크타임의 운영 효율성 극대화 포인트를 찾습니다." },
   { id: 14, section: DiagnosisSection.SALES_PROFIT, label: "월 임대료(VAT 포함)", type: "number", isMustFill: true, description: "컨설팅 Tip: 고정비 비중이 매출의 10%를 초과하면 경영이 매우 힘들어집니다." },
   { id: 15, section: DiagnosisSection.SALES_PROFIT, label: "원재료비(식자재) 점유율", type: "percentage", placeholder: "매출액 대비 %", description: "컨설팅 Tip: 맛있는 메뉴도 원재료비가 40%를 넘으면 남는 게 없습니다." },
-  { id: 16, section: DiagnosisSection.SALES_PROFIT, label: "인건비 총 지출액", type: "number", description: "사장님 본인의 인건비(기회비용)도 고려하세요.", description: "컨설팅 Tip: 대표님의 노동력을 '공짜'로 계산하고 있지는 않으신가요?" },
+  { id: 16, section: DiagnosisSection.SALES_PROFIT, label: "인건비 총 지출액", type: "number", description: "컨설팅 Tip: 대표님의 노동력을 '공짜'로 계산하고 있지는 않으신가요? (사장님 본인의 인건비도 반드시 고려하세요.)" },
   { id: 17, section: DiagnosisSection.SALES_PROFIT, label: "기타 고정 지출", type: "text", placeholder: "수도광열비, 플랫폼 수수료 등", description: "컨설팅 Tip: 보이지 않게 새는 비용을 차단하는 것이 수익 개선의 핵심입니다." },
   { id: 18, section: DiagnosisSection.SALES_PROFIT, label: "예상 월 순수익", type: "number", placeholder: "모든 비용을 제외한 실제 수익", description: "컨설팅 Tip: 결국 이 숫자를 유의미하게 높이는 것이 컨설팅의 최종 목표입니다." },
 
