@@ -44,6 +44,13 @@ function arr<T = unknown>(v: unknown): T[] {
 function strArr(v: unknown): string[] {
   return arr(v).map(str).filter((s) => s.trim() !== "");
 }
+
+// missingData/neededData는 '데이터 항목명'만 담아야 한다. LLM이 종종 해결 방안을
+// 섞어 넣으므로, 방안성 단어가 포함된 항목은 데이터 목록에서 걸러낸다(안전망).
+const SOLUTION_MARKERS = ["방안", "전략", "플랜", "아이디어", "해소", "개선책", "해결책"];
+function dataItemsOnly(v: unknown): string[] {
+  return strArr(v).filter((s) => !SOLUTION_MARKERS.some((m) => s.includes(m)));
+}
 function clampMinutes(v: unknown): number {
   const n = Number(v);
   if (isNaN(n)) return 15;
@@ -92,7 +99,7 @@ function normalizeReport(p: any): TeamSophiaReport {
       coachId: "anne-data",
       findings: strArr(anne.findings),
       diagnosis: str(anne.diagnosis),
-      missingData: strArr(anne.missingData),
+      missingData: dataItemsOnly(anne.missingData),
     },
     claireDiagnosis: {
       coachId: "claire-cs",
@@ -129,7 +136,7 @@ function normalizeReport(p: any): TeamSophiaReport {
       task: str(w?.task),
       owner: normOwner(w?.owner),
     })),
-    neededData: strArr(p?.neededData),
+    neededData: dataItemsOnly(p?.neededData),
     assignments: arr<any>(p?.assignments).map((a) => ({
       owner: normOwner(a?.owner),
       task: str(a?.task),
@@ -157,25 +164,34 @@ ${COACH_BRIEF}
 
 [공통 규칙]
 1. 사용자는 "사장님"이라고 부릅니다.
-2. 입력에 없는 숫자/메뉴/고객 반응/매장 정보를 절대 지어내지 마세요. 모르면 추정하지 말고 '추가로 필요한 데이터(neededData)'와 앤의 missingData로 요청하세요.
-3. '오늘 바로 할 일'은 각 10~30분 안에 가능한 아주 작은 행동으로 제안하세요.
-4. 코치가 맡을 일과 사장님이 직접 할 일을 구분하세요(owner 필드: "owner"=사장님, 그 외는 코치 id).
-5. 켈리의 콘텐츠는 기본적으로 얼굴 노출이 없습니다(faceless=true).
-6. 제인의 마케팅은 저비용/무료 실행을 우선합니다.
+2. 입력에 없는 숫자/메뉴/고객 반응/매장 정보를 절대 지어내지 마세요.
+3. missingData와 neededData에는 "사장님이 아직 입력하지 않은 '데이터 항목명'"만 넣습니다.
+   - 올바른 예: "월 평균 매출액", "평균 객단가", "재방문율", "주차 가능 대수", "메뉴별 원가".
+   - 절대 넣지 말 것: 해결 방안·전략·계획·아이디어·개선책. (예: "주차 불만 해소 방안" ← 금지)
+   - 즉 이 두 배열은 '숫자/사실'을 묻는 질문이지, '무엇을 하라'는 제안이 아닙니다.
+4. 문제에 대한 '해결 방안'은 반드시 해당 코치 블록에 구체적으로 작성하세요. "방안이 필요하다"고 미루지 말고 실제 방안을 제시합니다.
+   - 마케팅/유입/이벤트/주차 같은 운영 개선 → janePlan.actions
+   - 고객 불만/리뷰 재발 방지 → claireDiagnosis.preventiveActions
+   - 당장 할 작은 행동 → todayActions
+5. '오늘 바로 할 일'은 각 10~30분 안에 가능한 아주 작은 행동으로 제안하세요.
+6. 코치가 맡을 일과 사장님이 직접 할 일을 구분하세요(owner 필드: "owner"=사장님, 그 외는 코치 id).
+7. 켈리의 콘텐츠는 기본적으로 얼굴 노출이 없습니다(faceless=true).
+8. 제인의 마케팅은 저비용/무료 실행을 우선합니다.
 
 [출력 형식 — 반드시 유효한 JSON, 아래 구조를 정확히 따르세요]
 {
   "sophiaSummary": { "emotionalNote": string, "problemBreakdown": string[], "overview": string },
-  "anneDiagnosis": { "findings": string[], "diagnosis": string, "missingData": string[] },
+  "anneDiagnosis": { "findings": string[], "diagnosis": string, "missingData": string[] },  // missingData=부족한 데이터 항목명만 (방안 금지)
   "claireDiagnosis": { "customerIssues": string[], "replyDrafts": string[], "preventiveActions": string[] },
   "janePlan": { "actions": [ { "idea": string, "cost": "무료"|"저비용"|"유료", "expectedEffect": string } ] },
   "kellyIdeas": { "ideas": [ { "format": "릴스"|"쇼츠"|"카드뉴스"|"게시물", "concept": string, "caption": string, "faceless": boolean } ] },
   "todayActions": [ { "task": string, "estimatedMinutes": number, "owner": "owner"|코치id } ],
   "weeklyPlan": [ { "when": string, "task": string, "owner": "owner"|코치id } ],
-  "neededData": string[],
+  "neededData": string[],  // 부족한 데이터 항목명만 (방안 금지)
   "assignments": [ { "owner": "owner"|코치id, "task": string, "note"?: string } ]
 }
-todayActions는 정확히 3개를 제안하세요. findings에는 입력에 실제로 존재하는 값만 인용하세요.`;
+todayActions는 정확히 3개를 제안하세요. findings에는 입력에 실제로 존재하는 값만 인용하세요.
+janePlan.actions와 claireDiagnosis.preventiveActions는 비워두지 말고, 입력에서 드러난 문제에 대한 실제 방안을 채우세요.`;
 
 /** 입력값에서 매장명을 도출한다(없으면 기본값). Slack 요약·meta 조립에 사용. */
 export function deriveStoreName(input: TeamSophiaEngineInput): string {
