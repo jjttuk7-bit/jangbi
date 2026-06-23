@@ -814,7 +814,7 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
           <span className="text-xs font-black text-white bg-violet-600 rounded-md px-2 py-1">② 팀소피아 정밀 분석</span>
           <div className="flex-1 h-px bg-slate-200" />
         </div>
-        {diagnosisData && <HermesLivePanel diagnosisData={diagnosisData} />}
+        {diagnosisData && <HermesLivePanel diagnosisData={diagnosisData} basicReport={report} />}
 
         <div className="text-center py-12 opacity-40">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] leading-relaxed">팀소피아 · 소상공인 AI 컨설팅 팀<br />엔진 {teamSophia?.meta.engine ?? "—"} · 대외비 리포트</p>

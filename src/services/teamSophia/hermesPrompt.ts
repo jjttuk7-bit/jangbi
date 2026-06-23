@@ -45,14 +45,19 @@ ${filledFields(diagnosis) || "(아직 입력된 데이터가 거의 없음)"}
 /**
  * @param diagnosis 장사비서 폼 입력
  * @param hermesMention Hermes를 깨우는 멘션 문자열 ("<@U...>" 권장, 없으면 "@Hermes Agent")
+ * @param basicSummary gpt-4o가 만든 '기초 분석' 요약(있으면). 팀소피아는 이걸 검증·심화한다.
  */
-export function buildHermesPrompt(diagnosis: DiagnosisData, hermesMention = "@Hermes Agent"): string {
+export function buildHermesPrompt(diagnosis: DiagnosisData, hermesMention = "@Hermes Agent", basicSummary = ""): string {
   const filled = DIAGNOSIS_ITEMS.filter((i) => {
     const v = diagnosis[i.id];
     return v != null && String(v).trim() !== "";
   })
     .map((i) => `- ${i.label}: ${diagnosis[i.id]}`)
     .join("\n");
+
+  const basicBlock = basicSummary.trim()
+    ? `\n[이미 제공된 '기초 분석' (gpt-4o 자동 생성 · 참고용)]\n${basicSummary.trim()}\n\n→ 팀소피아는 이 기초 분석을 그대로 반복하지 마라. 반드시 한 단계 위로 올라서라:\n  (a) 검증·교정: 숫자 정합성(객수×객단가 vs 매출 등), 기초가 놓친 관점·오류를 짚는다.\n  (b) 심화: 표면 증상이 아니라 진짜 원인과 우선순위를 짚는다.\n  (c) 구체적 실행물 산출: 일반 조언이 아니라 바로 쓸 결과물을 낸다 — 클레어=실제 리뷰 답글 초안 문구, 제인=요일별 주간 실행 캘린더, 켈리=콘텐츠 문안/콘티, 앤=계산·진단표.\n`
+    : "";
 
   return `${hermesMention}
 
@@ -68,13 +73,13 @@ export function buildHermesPrompt(diagnosis: DiagnosisData, hermesMention = "@He
 상황:
 아래는 장사비서 폼에 입력된 사장님 매장 현황이야.
 ${filled || "(아직 입력된 데이터가 거의 없음)"}
-
-응답에는 반드시 다음을 포함해줘.
-1. 소피아의 종합 정리
-2. 앤의 매출/데이터 진단
-3. 클레어의 고객/리뷰 진단
-4. 제인의 마케팅 실행안
-5. 켈리의 콘텐츠 아이디어
+${basicBlock}
+응답에는 반드시 다음을 포함해줘. (각 코치는 기초 분석보다 더 깊고 구체적이어야 함)
+1. 소피아의 종합 정리 (기초 대비 무엇이 더/다른지 핵심)
+2. 앤의 매출/데이터 진단 (정합성 검증 + 계산·진단)
+3. 클레어의 고객/리뷰 진단 (실제 답글 초안 포함)
+4. 제인의 마케팅 실행안 (주간 실행 캘린더 등 구체물)
+5. 켈리의 콘텐츠 아이디어 (실제 문안/콘티)
 6. 오늘 사장님이 바로 할 일 3개
 7. [팀소피아 업무 배정]
 8. 추가로 필요한 데이터나 정보

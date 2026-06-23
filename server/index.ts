@@ -95,7 +95,8 @@ app.post("/api/sophia-ask", async (req, res) => {
     if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${TEAM_SOPHIA_CHANNEL})` });
     const hermesId = await resolveHermesUserId(SLACK_BRIDGE_BOT_TOKEN, channelId);
     const mention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
-    const prompt = buildHermesPrompt(diagnosis, mention);
+    const basicSummary = typeof req.body?.basicSummary === "string" ? req.body.basicSummary : "";
+    const prompt = buildHermesPrompt(diagnosis, mention, basicSummary);
     const result = await postRequest(SLACK_BRIDGE_BOT_TOKEN, channelId, prompt);
     if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
     return res.json({ ok: true, channel: result.channel, ts: result.ts, hermesResolved: Boolean(hermesId) });

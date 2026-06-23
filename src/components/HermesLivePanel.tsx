@@ -7,7 +7,20 @@
 
 import { ReactNode, useState } from "react";
 import { Users2, Send, Loader2, AlertCircle, RefreshCw, Sparkles } from "lucide-react";
-import { DiagnosisData } from "../types";
+import { DiagnosisData, DiagnosisReport } from "../types";
+
+/** gpt-4o 기초 분석을 팀소피아가 검증·심화하도록, 핵심만 추려 프롬프트에 동봉할 요약을 만든다. */
+function summarizeBasicReport(r?: DiagnosisReport): string {
+  if (!r) return "";
+  const lines: string[] = [];
+  if (r.overallScore != null) lines.push(`- 매장 건강지수: ${r.overallScore}점 (${r.scoreInterpretation?.label ?? ""})`);
+  if (r.coreStrategy) lines.push(`- 핵심 해법: ${r.coreStrategy}`);
+  if (r.summary) lines.push(`- 요약: ${r.summary}`);
+  if (r.weaknesses?.length) lines.push(`- 약점/리스크: ${r.weaknesses.slice(0, 3).join("; ")}`);
+  if (r.bepAnalysis) lines.push(`- 손익분기: 현재 ${r.bepAnalysis.currentStatus}, 목표매출 ${r.bepAnalysis.targetSales}, 공헌이익률 ${r.bepAnalysis.contributionMarginRatio}%`);
+  if (r.topThreePriorities?.length) lines.push(`- 기초가 본 우선순위 Top3: ${r.topThreePriorities.map((p) => p.task).join(", ")}`);
+  return lines.join("\n");
+}
 
 type Phase = "idle" | "working" | "done" | "error";
 
@@ -38,7 +51,7 @@ function formatLine(line: string): ReactNode[] {
   return parts.length ? parts : [line];
 }
 
-export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisData }) {
+export function HermesLivePanel({ diagnosisData, basicReport }: { diagnosisData: DiagnosisData; basicReport?: DiagnosisReport }) {
   const [phase, setPhase] = useState<Phase>("idle");
   const [status, setStatus] = useState("");
   const [answer, setAnswer] = useState("");
@@ -53,7 +66,7 @@ export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisDat
       const askRes = await fetch("/api/sophia-ask", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ diagnosis: diagnosisData }),
+        body: JSON.stringify({ diagnosis: diagnosisData, basicSummary: summarizeBasicReport(basicReport) }),
       });
       const ask = await askRes.json();
       if (!ask?.ok || !ask?.ts) throw new Error(ask?.error || "요청 게시에 실패했습니다.");

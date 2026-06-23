@@ -34,7 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const hermesId = await resolveHermesUserId(token, channelId);
     const mention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
-    const prompt = buildHermesPrompt(diagnosis, mention);
+    const basicSummary = typeof body?.basicSummary === "string" ? body.basicSummary : "";
+    const prompt = buildHermesPrompt(diagnosis, mention, basicSummary);
 
     const result = await postRequest(token, channelId, prompt);
     if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
