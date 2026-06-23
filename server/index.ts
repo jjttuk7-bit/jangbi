@@ -132,7 +132,8 @@ app.post("/api/coach-ask", async (req, res) => {
     if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${COACHES[coachId].channel})` });
     const bridgeBotId = process.env.SLACK_BRIDGE_BOT_USER_ID || "U0BCDG94430";
     const envKey = "SLACK_AGENT_" + coachId.toUpperCase().replace(/-/g, "_");
-    const agentId = process.env[envKey] || (await resolveOtherBotId(SLACK_BRIDGE_BOT_TOKEN, channelId, bridgeBotId));
+    const agentIdFromBody = typeof req.body?.agentId === "string" && req.body.agentId ? req.body.agentId : undefined;
+    const agentId = agentIdFromBody || process.env[envKey] || (await resolveOtherBotId(SLACK_BRIDGE_BOT_TOKEN, channelId, bridgeBotId));
     const mention = agentId ? `<@${agentId}>` : `@${COACHES[coachId].shortName}`;
     const prompt = buildCoachPrompt(coachId, diagnosis, mention);
     const result = await postRequest(SLACK_BRIDGE_BOT_TOKEN, channelId, prompt);

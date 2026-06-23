@@ -37,9 +37,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const channelId = await resolveChannelId(token, COACHES[coachId].channel);
     if (!channelId) return res.status(500).json({ ok: false, error: `채널을 찾지 못했습니다(${COACHES[coachId].channel}). 봇 초대 확인.` });
 
-    // 코치 에이전트 봇 멘션: env 우선, 없으면 채널에서 '브릿지 봇이 아닌 봇' 자동 해석
+    // 코치 에이전트 봇 멘션: 요청 body.agentId > env > 채널 자동 해석
     const bridgeBotId = process.env.SLACK_BRIDGE_BOT_USER_ID || "U0BCDG94430";
-    const agentId = agentIdEnv(coachId) || (await resolveOtherBotId(token, channelId, bridgeBotId));
+    const agentIdFromBody = typeof body?.agentId === "string" && body.agentId ? body.agentId : undefined;
+    const agentId = agentIdFromBody || agentIdEnv(coachId) || (await resolveOtherBotId(token, channelId, bridgeBotId));
     const mention = agentId ? `<@${agentId}>` : `@${COACHES[coachId].shortName}`;
 
     const prompt = buildCoachPrompt(coachId, diagnosis, mention);
