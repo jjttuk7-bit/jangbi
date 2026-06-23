@@ -14,6 +14,8 @@ import { TeamSophiaSlackBundle, TeamSophiaEngineInput, CONTEXT_DOC } from "../sr
 import { generateDiagnosisReport } from "../src/services/diagnosisCore";
 import { deriveStoreName, generateTeamSophiaReport } from "../src/services/teamSophia/llmCore";
 import { buildSlackBundle } from "../src/services/teamSophia/slackBundle";
+import { postRequest, resolveChannelId, resolveHermesUserId, getThreadReplies } from "../src/services/teamSophia/slackBridge";
+import { buildHermesPrompt } from "../src/services/teamSophia/hermesPrompt";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -21,6 +23,8 @@ app.use(express.json({ limit: "1mb" }));
 const PORT = Number(process.env.SERVER_PORT) || 8787;
 const SLACK_BOT_TOKEN = process.env.SLACK_BOT_TOKEN;
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const SLACK_BRIDGE_BOT_TOKEN = process.env.SLACK_BRIDGE_BOT_TOKEN;
+const TEAM_SOPHIA_CHANNEL = process.env.SLACK_TEAM_SOPHIA_CHANNEL || "#team-sophia-daily";
 
 app.get("/api/slack/health", (_req, res) => {
   res.json({ ok: true, tokenConfigured: Boolean(SLACK_BOT_TOKEN), openaiConfigured: Boolean(OPENAI_API_KEY) });
@@ -80,6 +84,41 @@ app.post("/api/slack", async (req, res) => {
   }
 });
 
+// 로컬 dev: Hermes 브릿지 — 요청 게시
+app.post("/api/sophia-ask", async (req, res) => {
+  if (!SLACK_BRIDGE_BOT_TOKEN) return res.status(500).json({ ok: false, error: "SLACK_BRIDGE_BOT_TOKEN 미설정" });
+  const diagnosis = req.body?.diagnosis;
+  if (!diagnosis || typeof diagnosis !== "object") return res.status(400).json({ ok: false, error: "diagnosis 필요" });
+  try {
+    const channelId = await resolveChannelId(SLACK_BRIDGE_BOT_TOKEN, TEAM_SOPHIA_CHANNEL);
+    if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${TEAM_SOPHIA_CHANNEL})` });
+    const hermesId = await resolveHermesUserId(SLACK_BRIDGE_BOT_TOKEN, channelId);
+    const mention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
+    const prompt = buildHermesPrompt(diagnosis, mention);
+    const result = await postRequest(SLACK_BRIDGE_BOT_TOKEN, channelId, prompt);
+    if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
+    return res.json({ ok: true, channel: result.channel, ts: result.ts, hermesResolved: Boolean(hermesId) });
+  } catch (e: any) {
+    console.error("[sophia-ask] 오류:", e);
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+});
+
+// 로컬 dev: Hermes 브릿지 — 응답 수거
+app.get("/api/sophia-poll", async (req, res) => {
+  if (!SLACK_BRIDGE_BOT_TOKEN) return res.status(500).json({ ok: false, error: "SLACK_BRIDGE_BOT_TOKEN 미설정" });
+  const channel = String(req.query.channel || "");
+  const ts = String(req.query.ts || "");
+  if (!channel || !ts) return res.status(400).json({ ok: false, error: "channel, ts 필요" });
+  try {
+    const replies = await getThreadReplies(SLACK_BRIDGE_BOT_TOKEN, channel, ts);
+    return res.json({ ok: true, count: replies.length, replies });
+  } catch (e: any) {
+    console.error("[sophia-poll] 오류:", e);
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+});
+
 app.listen(PORT, () => {
-  console.log(`[slack-server] listening on :${PORT} (token ${SLACK_BOT_TOKEN ? "OK" : "MISSING"})`);
+  console.log(`[slack-server] listening on :${PORT} (openai ${OPENAI_API_KEY ? "OK" : "MISSING"}, slack ${SLACK_BOT_TOKEN ? "OK" : "MISSING"}, bridge ${SLACK_BRIDGE_BOT_TOKEN ? "OK" : "MISSING"})`);
 });
