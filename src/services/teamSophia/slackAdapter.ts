@@ -56,7 +56,19 @@ export function buildSlackMessages(bundle: TeamSophiaSlackBundle): SlackMessage[
     ],
   });
 
-  // 2) 검수 필요 케이스 (해당 코치 채널)
+  // 2) 코치별 결과 요약 (각 코치 채널) — 5인 코치가 운영실에서 모두 보이도록
+  for (const d of bundle.coachDigests) {
+    messages.push({
+      channel: d.channel,
+      text: d.headline,
+      blocks: [
+        section(`*🧩 ${d.headline}*`),
+        section(d.lines.map((l) => `• ${l}`).join("\n")),
+      ],
+    });
+  }
+
+  // 3) 검수 필요 케이스 (해당 코치 채널)
   for (const r of bundle.reviewCases) {
     const emoji = SEVERITY_EMOJI[r.severity] ?? "⚪";
     messages.push({
@@ -70,7 +82,7 @@ export function buildSlackMessages(bundle: TeamSophiaSlackBundle): SlackMessage[
     });
   }
 
-  // 3) 운영 로그 (#build-log)
+  // 4) 운영 로그 (#build-log)
   for (const log of bundle.opsLog) {
     messages.push({
       channel: log.channel,

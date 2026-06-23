@@ -10,17 +10,43 @@ import {
   CHANNEL_BUILD_LOG,
   CHANNEL_TEAM_DAILY,
   COACHES,
+  CoachId,
   TeamSophiaReport,
   TeamSophiaSlackBundle,
 } from "./types.js";
 
-const ALL_COACHES = [
-  "sophia",
-  "anne-data",
-  "claire-cs",
-  "jane-marketer",
-  "kelly-creator",
-] as const;
+/** 리포트에서 각 코치의 산출물을 채널용 요약 불릿으로 만든다. 내용 없는 코치는 제외. */
+function buildCoachDigests(report: TeamSophiaReport): TeamSophiaSlackBundle["coachDigests"] {
+  const digests: TeamSophiaSlackBundle["coachDigests"] = [];
+  const add = (coachId: CoachId, headline: string, lines: (string | undefined)[]) => {
+    const clean = lines.map((l) => (l ?? "").trim()).filter((l) => l !== "");
+    if (clean.length > 0) {
+      digests.push({ channel: COACHES[coachId].channel, coachId, headline, lines: clean });
+    }
+  };
+
+  add("sophia", "마스터 코치 소피아 · 종합 정리", [report.sophiaSummary.overview]);
+  add("anne-data", "데이터 분석가 앤 · 매출/데이터 진단", [
+    report.anneDiagnosis.diagnosis,
+    ...report.anneDiagnosis.findings.slice(0, 3),
+  ]);
+  add("claire-cs", "CS 코치 클레어 · 고객/리뷰", [
+    ...report.claireDiagnosis.customerIssues.slice(0, 2),
+    ...report.claireDiagnosis.preventiveActions.slice(0, 2),
+  ]);
+  add(
+    "jane-marketer",
+    "마케터 제인 · 마케팅 실행안",
+    report.janePlan.actions.map((a) => `${a.idea} (${a.cost}) → ${a.expectedEffect}`)
+  );
+  add(
+    "kelly-creator",
+    "크리에이터 켈리 · 콘텐츠 아이디어",
+    report.kellyIdeas.ideas.map((i) => `[${i.format}] ${i.concept}`)
+  );
+
+  return digests;
+}
 
 export interface BuildBundleOptions {
   storeName: string;
@@ -70,20 +96,25 @@ export function buildSlackBundle(
       ? `[${storeName}] 데이터 보강 우선 — 진단 진행`
       : `[${storeName}] 진단 완료`);
 
+  const coachDigests = buildCoachDigests(report);
+  // 관여 코치 = 실제 산출물이 있어 채널에 요약이 올라간 코치만. (하드코딩 X)
+  const coachesInvolved = coachDigests.map((d) => d.coachId);
+
   return {
     summary: {
       channel: CHANNEL_TEAM_DAILY,
       storeName,
       headline,
       todayActions: report.todayActions.map((a) => a.task),
-      coachesInvolved: [...ALL_COACHES],
+      coachesInvolved,
     },
+    coachDigests,
     reviewCases,
     opsLog: [
       {
         channel: CHANNEL_BUILD_LOG,
         event: "report.generated",
-        detail: `engine=${engine} store="${storeName}" neededData=${report.neededData.length} reviewCases=${reviewCases.length}`,
+        detail: `engine=${engine} store="${storeName}" coaches=${coachesInvolved.length} reviewCases=${reviewCases.length} neededData=${report.neededData.length}`,
         timestamp: generatedAt,
       },
     ],

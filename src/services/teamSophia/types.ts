@@ -235,9 +235,23 @@ export interface SlackOpsLogPayload {
   timestamp: string;
 }
 
-/** Slack으로 전송될 묶음 (정의서 §6의 3종류만 포함) */
+/**
+ * 코치별 결과 요약: 각 코치의 산출물을 해당 코치 채널에 간결히 올린다.
+ * (정의서 §2 — 코치 채널은 코치별 검증 공간 / §6 — 전체가 아니라 요약)
+ */
+export interface SlackCoachDigestPayload {
+  channel: string;
+  coachId: CoachId;
+  /** 예: "마케터 제인 · 마케팅 실행안" */
+  headline: string;
+  /** 요약 불릿 (코치 산출물의 핵심만) */
+  lines: string[];
+}
+
+/** Slack으로 전송될 묶음 (정의서 §6: 요약 / 코치별 요약 / 검수 필요 케이스 / 운영 로그) */
 export interface TeamSophiaSlackBundle {
   summary: SlackSummaryPayload;
+  coachDigests: SlackCoachDigestPayload[];
   reviewCases: SlackReviewCasePayload[];
   opsLog: SlackOpsLogPayload[];
 }
