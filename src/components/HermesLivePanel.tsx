@@ -60,7 +60,7 @@ export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisDat
 
       const channel: string = ask.channel;
       const ts: string = ask.ts;
-      setStatus("Hermes 팀소피아가 검토 중… (코치 분업 시 수 분 걸릴 수 있어요)");
+      setStatus("팀소피아가 검토 중… (코치 분업 시 수 분 걸릴 수 있어요)");
 
       let stable = 0;
       let prevCount = -1;
@@ -105,7 +105,7 @@ export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisDat
       if (latestAnswer) setPhase("done");
       else {
         setPhase("error");
-        setError("아직 Hermes 응답이 도착하지 않았어요. 잠시 후 다시 시도해 주세요. (슬랙 #team-sophia-daily에서 진행 상황을 볼 수 있습니다)");
+        setError("아직 팀소피아 응답이 도착하지 않았어요. 잠시 후 다시 시도해 주세요.");
       }
     } catch (e: any) {
       setPhase("error");
@@ -129,7 +129,7 @@ export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisDat
       {phase === "idle" && (
         <div className="space-y-4">
           <p className="text-[13px] text-white/80 leading-relaxed">
-            이 진단 내용을 팀소피아(Hermes) 팀에게 보내 <strong className="text-white">소피아가 코치들에게 직접 분업</strong>한 실제 컨설팅을 받아보세요. 응답이 오면 아래에 표시됩니다.
+            이 진단 내용을 팀소피아 팀에게 보내 <strong className="text-white">소피아가 코치들에게 직접 분업</strong>한 실제 컨설팅을 받아보세요. 응답이 오면 아래에 표시됩니다.
           </p>
           <button
             onClick={run}

@@ -372,10 +372,20 @@ const COACH_THEME: Record<CoachId, CoachTheme> = {
   "kelly-creator": { name: "크리에이터 켈리", role: "콘텐츠 아이디어 · 얼굴 노출 없음", initial: "켈", text: "text-teal-600", ring: "border-teal-500", barL: "border-l-teal-500", Icon: Clapperboard },
 };
 
+// 기초 분석에선 개별 코치 이름을 노출하지 않는다 (코치는 팀소피아 정밀 분석에만 등장)
 function ownerName(owner: TaskOwner): string {
   if (owner === "owner") return "사장님";
-  return COACHES[owner].shortName;
+  return "팀소피아";
 }
+
+// 기초 분석은 코치 이름 없이 중립적인 분석 카테고리로만 표기 (코치는 팀소피아 정밀 분석에만 등장)
+const SECTION_TITLE: Record<CoachId, string> = {
+  sophia: "종합 진단",
+  "anne-data": "매출 · 메뉴 · 재무 분석",
+  "claire-cs": "고객 · 리뷰 분석",
+  "jane-marketer": "마케팅 · 경쟁 분석",
+  "kelly-creator": "콘텐츠 제안",
+};
 
 function CoachSection({ coachId, score, intro, children }: { coachId: CoachId; score?: ReactNode; intro?: string; children: ReactNode }) {
   const t = COACH_THEME[coachId];
@@ -383,13 +393,11 @@ function CoachSection({ coachId, score, intro, children }: { coachId: CoachId; s
   return (
     <section className={`bg-white border border-slate-200 border-l-4 ${t.barL} rounded-3xl p-7 md:p-10 shadow-sm`}>
       <div className="flex items-center gap-4 mb-6">
-        <div className={`w-12 h-12 rounded-full border-2 ${t.ring} ${t.text} flex items-center justify-center font-black text-base shrink-0`}>{t.initial}</div>
+        <div className={`w-11 h-11 rounded-2xl border ${t.ring} ${t.text} flex items-center justify-center shrink-0`}><Icon className="w-5 h-5" /></div>
         <div className="flex-1 min-w-0">
-          <div className="text-lg font-black text-slate-900 leading-tight">{t.name}</div>
-          <div className="text-xs font-bold text-slate-400">{t.role}</div>
+          <div className="text-lg font-black text-slate-900 leading-tight">{SECTION_TITLE[coachId]}</div>
         </div>
         {score}
-        <Icon className={`w-5 h-5 ${t.text} shrink-0`} />
       </div>
       {intro && <p className="text-[15px] text-slate-600 leading-relaxed mb-6 border-l-2 border-slate-100 pl-4">{intro}</p>}
       {children}
