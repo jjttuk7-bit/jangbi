@@ -50,6 +50,11 @@ import {
 import { DIAGNOSIS_ITEMS } from "./constants";
 import { DiagnosisSection, DiagnosisData, DiagnosisReport } from "./types";
 import { generateDiagnosis } from "./services/geminiService";
+import { runDummyEngine } from "./services/teamSophia/dummyEngine";
+import { runLlmEngine } from "./services/teamSophia/llmEngine";
+import { sendTeamSophiaToSlack } from "./services/teamSophia/slackClient";
+import { TeamSophiaEngineResult } from "./services/teamSophia/types";
+import { TeamSophiaReport } from "./components/TeamSophiaReport";
 
 export default function App() {
   const [currentSectionIndex, setCurrentSectionIndex] = useState(0);
@@ -59,6 +64,7 @@ export default function App() {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [report, setReport] = useState<DiagnosisReport | null>(null);
+  const [teamSophia, setTeamSophia] = useState<TeamSophiaEngineResult | null>(null);
   const [loadingStage, setLoadingStage] = useState(0);
   const [showMustFillOnly, setShowMustFillOnly] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
@@ -109,20 +115,76 @@ export default function App() {
 
   const fillMockData = () => {
     const mockData: DiagnosisData = {
+      // SECTION 1. 매장 기본 정보
       1: "외식업 > 한식 > 고기구이 전문점",
       2: "2022-11-20",
       3: "주거지 밀집",
       4: "40평, 좌석 80석 (테이블 20개)",
       5: "사장 1명, 정직원 2명, 알바 4명",
+      6: "매일 11:30~익일 01:00 영업 / 매주 월요일 정기 휴무 / 주말·공휴일 정상 영업",
+
+      // SECTION 2. 매출 & 수익 현황
       7: "65000000",
+      8: "카드 88% / 현금 7% / 네이버페이·간편결제 5%",
       9: "1800",
       10: "36000",
+      11: "저녁 피크(18:00~22:00) 75% 집중 / 점심(11:30~14:00) 15% / 나머지 시간대 10%",
+      12: "주말(금~일) 3일이 전체 매출의 약 62% 차지 / 평일 대비 주말 일매출 약 2.3배",
+      13: "2.1",
       14: "5500000",
       15: "38",
-      21: "숙성 통삼겹살, 소생갈비, 한우 육회, 시골 된장찌개",
-      29: "네이버 플레이스 예약 40%, 인근 아파트 주민 및 로컬 단골 40%, 블로그/SNS 리뷰 20%",
-      35: "336시간 웻에이징 숙성법과 최고급 참숯 직화, 5년 숙성 천일염 사용",
-      52: "원재료값 및 인건비 상승으로 인한 순이익률 정체, 주말에 편중된 매출 구조로 인한 평일 유휴 인력 및 고정비 비효율 발생",
+      16: "13500000",
+      17: "수도광열비 80만원 / 카드수수료 약 50만원 / 소모품·포장재 30만원 / 기타잡비 20만원 (총 약 180만원)",
+      18: "4500000",
+
+      // SECTION 3. 메뉴 & 판매 구성
+      19: "숙성 통삼겹살 1인(200g) 18,000원 / 소생갈비 1인(200g) 22,000원 / 한우 육회 소 28,000원·대 48,000원 / 시골 된장찌개 5,000원 / 냉면 7,000원 / 소주 5,000원 / 맥주 5,000원 / 막걸리 6,000원 / 공깃밥 1,000원",
+      20: "숙성 통삼겹살 (336시간 웻에이징 숙성, 매장 핵심 정체성 메뉴)",
+      21: "1위 숙성 통삼겹살 / 2위 소생갈비 / 3위 한우 육회",
+      22: "소생갈비 (추정 마진율 약 55~58%, 테이블당 1인분 이상 추가 주문율 높음)",
+      23: "냉면, 된장찌개 (전체 주문의 5% 미만, 식재료 손실 및 주방 동선 혼란 유발)",
+      24: "2023년 6월 한우 육회 신규 출시 / 2024년 2월 삼겹살 1,000원 인상 / 2024년 4월 저수익 메뉴 2종 폐기",
+      25: "식재료 원가율 35~40% 유지를 목표로 설정 후, 인근 경쟁점 가격 비교하여 최종 확정",
+
+      // SECTION 4. 고객 흐름 & 단골 현황
+      26: "30~40대 남성 45% / 30~40대 여성 35% / 20대 커플·친구 모임 20%",
+      27: "가족 외식·지인 모임 45% / 인근 아파트 단골 35% / 직장 회식 20%",
+      28: "40",
+      29: "네이버 플레이스 예약 40% / 인근 아파트 주민·로컬 단골 40% / 블로그·SNS 리뷰 유입 20%",
+      30: "주차 공간 부족 불만 다수 / 피크타임 서비스 응대 속도 지연 / 가끔 고기 굽기 타이밍 안내 부족 지적",
+      31: "고기 품질 및 숙성도 극찬 리뷰 집중 / 소생갈비 단독 목적 재방문 고객 존재 / 참숯 향 및 불 조절 서비스 호평",
+
+      // SECTION 5. 주변 상권 & 경쟁 매장
+      32: "반경 500m 내 대형 고기구이 전문점 2곳(좌석 120석 이상, 주차 10대) / 프랜차이즈 삼겹살 브랜드 1곳(배달 강세, 런치세트 운영) / 일반 한식당 4곳",
+      33: "비슷함",
+      34: "대형 경쟁점: 넓은 주차 공간과 단체석 보유로 회식 수요 흡수 / 프랜차이즈점: 점심 세트 메뉴와 배달 서비스로 평일 고객 선점",
+      35: "336시간 웻에이징 숙성법과 최고급 참숯 직화 / 5년 숙성 천일염 사용 / 사장 직접 매일 고기 손질 (공장식 전처리 없음)",
+      36: "최근 6개월 소규모 식당 3곳 폐업 / 인근 아파트 신규 입주 단지 600세대 2024년 하반기 예정으로 잠재 수요 증가 기대",
+
+      // SECTION 6. 홍보 & 온라인 반응
+      37: "네이버 플레이스 리뷰 386개·평점 4.6 / 사진 230장 등록 / 예약 시스템 연동 / 월 1~2회 사장 답글 작성 중",
+      38: "구글 리뷰 52개·평점 4.4 / 인스타그램 팔로워 1,240명 / 블로그 체험단 연 4회 진행",
+      39: "배달 플랫폼 미입점 (홀 영업 전문, 고기 품질 유지 어려움 판단으로 의도적 미운영)",
+      40: "인스타그램 자체 운영(팔로워 1,240명) 주 1~2회 업로드 / 네이버 블로그 비정기 운영",
+      41: "월 1회 블로그 체험단 운영(비용 약 15만원) / 인스타그램 유료 광고 미운영 / 네이버 플레이스 예약 프로모션 간헐적 진행",
+      42: "150000",
+      43: "네이버 플레이스 예약 고객 음료 쿠폰 제공 / 단골 고객 비공식 소주 서비스 / 별도 앱·포인트 제도 없음",
+
+      // SECTION 7. 매장 운영 상태
+      44: "12",
+      45: "정직원 평균 근속 14개월 / 알바 연 이직률 약 200% (업계 평균 수준) / 채용 시 숙련도 편차 큼",
+      46: "경험적 관리",
+      47: "POS 시스템(이카운트) 사용 중 / 테이블오더 미도입 / 재고 관리 수기 장부 / 매출 데이터 분석은 주 1회 수작업",
+      48: "육류 납품업체 2곳 주 2회 발주 / 채소류 재래시장 직매입 주 3회 / 단가 협상 여지 있으나 장기 계약 미체결",
+      49: "별도 위생·서비스 매뉴얼 없음 / 구두 전달 방식 / 주방 위생 점검 비정기적 / 신규 알바 적응 기간 평균 2~3주 소요",
+      50: "피크타임 주문 폭주로 인한 서비스 지연 / 주방-홀 소통 오류로 오주문 발생 주 1~2건 / 고기 재고 수요 예측 어려움",
+
+      // SECTION 8. 사장님의 목표 & 운영 방향
+      51: "20년 직장 생활 후 '재료에 타협 없는 진짜 고기집' 창업 / 경영 철학: 손님이 남기지 않는 고기, 오면 또 오고 싶은 집",
+      52: "원재료값·인건비 상승으로 순이익률 정체 / 주말 편중 매출 구조로 평일 유휴 인력·고정비 비효율 발생 / 단골 유지 외 신규 고객 유입 채널 부재",
+      53: "6개월 내 월 순이익 700만원 이상 달성 / 평일 매출 현재 대비 30% 증대 / 네이버 플레이스 리뷰 500개·평점 4.7 달성",
+      54: "추가 투자 가능 금액 약 500만원 이내 / 대표 본인 시간 투자 가능 / 인력 추가 채용 여력 없음",
+      55: "주 2~3시간 (영업 마감 후 새벽 시간 활용 가능)",
     };
     setData(mockData);
   };
@@ -153,9 +215,29 @@ export default function App() {
     try {
       const result = await generateDiagnosis(data);
       setReport(result);
+      // 팀소피아 엔진: LLM 우선, 실패 시 더미로 폴백
+      try {
+        let ts;
+        try {
+          ts = await runLlmEngine({ diagnosis: data });
+        } catch (llmError) {
+          console.warn("팀소피아 LLM 엔진 실패, 더미 엔진으로 폴백:", llmError);
+          ts = await runDummyEngine({ diagnosis: data });
+        }
+        setTeamSophia(ts);
+        // Slack 내부 운영실로 요약/검수/로그 전송 (정의서 §6). 실패해도 무시.
+        sendTeamSophiaToSlack(ts.slack)
+          .then((r) => {
+            if (!r.ok) console.warn("Slack 전송 실패:", r.error ?? r.results);
+          })
+          .catch((e) => console.warn("Slack 전송 예외:", e));
+      } catch (tsError) {
+        console.error("Team Sophia Engine Error:", tsError);
+        setTeamSophia(null);
+      }
     } catch (error: any) {
       console.error("Diagnosis Error:", error);
-      alert(error.message || "분석 리포트 생성 중 오류가 발생했습니다. 다시 시도해주세요.");
+      alert(error.message || `분석 리포트 생성 중 오류가 발생했습니다. (${error?.status ?? "알 수 없는 오류"}) 다시 시도해주세요.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -163,13 +245,14 @@ export default function App() {
 
   const reset = () => {
     setReport(null);
+    setTeamSophia(null);
     setCurrentSectionIndex(0);
     setData({});
     localStorage.removeItem("diagnosis_data");
   };
 
   if (report) {
-    return <ReportView report={report} onReset={reset} />;
+    return <ReportView report={report} teamSophia={teamSophia} onReset={reset} />;
   }
 
   return (
@@ -201,7 +284,7 @@ export default function App() {
                 {showMustFillOnly ? "필수 질문만 표시 중" : "전체 질문 보기"}
               </button>
               <span className={`text-[9px] font-black tracking-tighter transition-colors ${showMustFillOnly ? "text-brand-accent" : "text-slate-400"}`}>
-                {showMustFillOnly ? "현황 파악을 위한 퀵(Quick) 모드" : "정밀 컨설팅을 위한 풀(Full) 모드"}
+                {showMustFillOnly ? "현황 파악을 위한 빠른 진단 모드" : "정밀 컨설팅을 위한 전체 진단 모드"}
               </span>
             </div>
 
@@ -534,7 +617,7 @@ function WaterfallChart({ data, cashFlow }: { data: DiagnosisReport["financialDe
         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">순이익 산출 Waterfall (추정)</span>
         <div className="flex items-center gap-1 text-brand-accent">
           <TrendingUp className="w-3.5 h-3.5" />
-          <span className="text-[9px] font-black">PROFIT LOGIC</span>
+          <span className="text-[9px] font-black">수익 흐름</span>
         </div>
       </div>
       <div className="space-y-2.5">
@@ -569,7 +652,7 @@ function WaterfallChart({ data, cashFlow }: { data: DiagnosisReport["financialDe
       <div className="mt-6 p-4 bg-white rounded-xl border border-slate-200 shadow-sm border-l-4 border-l-brand-accent">
         <div className="flex items-center gap-2 mb-1.5">
           <Zap className="w-3.5 h-3.5 text-brand-accent" />
-          <span className="text-[10px] font-black text-slate-900 uppercase">현금흐름(Cash Flow) 구조 진단</span>
+          <span className="text-[10px] font-black text-slate-900 uppercase">현금흐름 구조 진단</span>
         </div>
         <p className="text-[11px] font-bold text-slate-600 leading-relaxed italic line-clamp-2">
           {cashFlow}
@@ -630,7 +713,7 @@ function CompetitorTable({ data }: { data: DiagnosisReport["competitorAnalysis"]
           <tr>
             <th className="px-6 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest">비교 요소</th>
             <th className="px-6 py-4 text-[10px] font-black text-slate-900 uppercase tracking-widest">우리 매장 (Me)</th>
-            <th className="px-6 py-4 text-[10px] font-black text-brand-accent uppercase tracking-widest">핵심 경쟁사 (Competitor)</th>
+            <th className="px-6 py-4 text-[10px] font-black text-brand-accent uppercase tracking-widest">핵심 경쟁사</th>
           </tr>
         </thead>
         <tbody className="divide-y divide-slate-100">
@@ -720,7 +803,7 @@ function RevenueHeatmap({ data }: { data: DiagnosisReport["revenueHeatmap"] }) {
           <table className="w-full text-center border-separate border-spacing-2">
             <thead>
               <tr>
-                <th className="text-[9px] font-black text-slate-500 uppercase p-2">Time Slot</th>
+                <th className="text-[9px] font-black text-slate-500 uppercase p-2">시간대</th>
                 <th className="text-[9px] font-black text-slate-500 uppercase p-2">평일 매출</th>
                 <th className="text-[9px] font-black text-slate-500 uppercase p-2">주말 매출</th>
                 <th className="text-[9px] font-black text-slate-500 uppercase p-2">인건비 비중</th>
@@ -733,7 +816,7 @@ function RevenueHeatmap({ data }: { data: DiagnosisReport["revenueHeatmap"] }) {
                   <td className="text-[11px] font-bold text-slate-300 p-3 bg-blue-500/10 rounded-xl">{row.weekdaySales}</td>
                   <td className="text-[11px] font-bold text-slate-300 p-3 bg-brand-accent/20 rounded-xl border border-brand-accent/30">{row.weekendSales}</td>
                   <td className={`text-[11px] font-black p-3 rounded-xl ${
-                    row.laborCost.includes('고효율') ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
+                    String(row.laborCost).includes('고효율') ? 'text-emerald-400 bg-emerald-500/10' : 'text-red-400 bg-red-500/10'
                   }`}>{row.laborCost}</td>
                 </tr>
               ))}
@@ -750,7 +833,7 @@ function CostBreakdownTable({ data }: { data: DiagnosisReport["menuEngineering"]
   return (
     <div className="mt-8 bg-white border border-slate-200 rounded-3xl overflow-hidden shadow-xl shadow-slate-200/20">
       <div className="bg-slate-50 px-8 py-5 border-b border-slate-200 flex items-center justify-between">
-         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">주요 메뉴 실측 원가 분해표 (Estimated)</span>
+         <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">주요 메뉴 실측 원가 분해표 (추정)</span>
          <TrendingUp className="w-4 h-4 text-emerald-500" />
       </div>
       <table className="w-full text-left border-collapse">
@@ -811,7 +894,7 @@ function MonthlyTrendChart({ data }: { data: DiagnosisReport["financialDetail"][
           </div>
         </div>
       </div>
-      <ResponsiveContainer width="100%" height="80%">
+      <ResponsiveContainer width="100%" height={200}>
         <AreaChart data={data || []}>
           <defs>
             <linearGradient id="colorSales" x1="0" y1="0" x2="0" y2="1">
@@ -850,18 +933,18 @@ function ProductivityMetrics({ data }: { data: DiagnosisReport["customerLogistic
           <Users2 className="w-16 h-16 text-brand-accent" />
         </div>
         <div className="relative z-10">
-          <span className="text-[10px] font-black text-brand-accent uppercase tracking-widest block mb-1">고객 재방문율 (Verification)</span>
+          <span className="text-[10px] font-black text-brand-accent uppercase tracking-widest block mb-1">고객 재방문율</span>
           <div className="text-3xl font-black text-white mb-2">{data.retentionRate}</div>
           <p className="text-[11px] font-bold text-slate-400">{data.insight}</p>
         </div>
       </div>
       <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/30 group">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">직원 1인당 생산성 (Productivity)</span>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">직원 1인당 생산성</span>
         <div className="text-3xl font-black text-slate-900 mb-2">{data.tablesPerStaff}</div>
         <p className="text-[11px] font-bold text-slate-500">테이블 20개 기준 적정 서비스 품질 유지 지수입니다.</p>
       </div>
       <div className="bg-white p-8 rounded-3xl border border-slate-200 shadow-xl shadow-slate-200/30 group">
-        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">평균 주문 처리 속도 (Velocity)</span>
+        <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest block mb-1">평균 주문 처리 속도</span>
         <div className="text-3xl font-black text-slate-900 mb-2">{data.processingTime}</div>
         <p className="text-[11px] font-bold text-slate-500">최초 주문부터 서빙 완료까지의 소요 시간입니다.</p>
       </div>
@@ -883,10 +966,10 @@ function StrategicRisksGrid({ risks }: { risks: DiagnosisReport["strategicRisks"
             <h5 className="text-sm font-black text-slate-900 leading-tight">{r.risk}</h5>
             <div className="space-y-1.5">
               <p className="text-[11px] font-bold text-slate-600 leading-relaxed italic border-l-2 border-red-200 pl-2">
-                <span className="text-red-500 opacity-50 mr-1 uppercase text-[9px] font-black">Impact:</span> {r.impact}
+                <span className="text-red-500 opacity-50 mr-1 uppercase text-[9px] font-black">영향:</span> {r.impact}
               </p>
               <p className="text-[11px] font-bold text-emerald-600 leading-relaxed italic border-l-2 border-emerald-200 pl-2">
-                <span className="text-emerald-500 opacity-50 mr-1 uppercase text-[9px] font-black">Strategy:</span> {r.prevention}
+                <span className="text-emerald-500 opacity-50 mr-1 uppercase text-[9px] font-black">대응:</span> {r.prevention}
               </p>
             </div>
           </div>
@@ -896,7 +979,7 @@ function StrategicRisksGrid({ risks }: { risks: DiagnosisReport["strategicRisks"
   );
 }
 
-function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () => void }) {
+function ReportView({ report, teamSophia, onReset }: { report: DiagnosisReport; teamSophia: TeamSophiaEngineResult | null; onReset: () => void }) {
   return (
     <motion.div 
       initial={{ opacity: 0 }}
@@ -1106,7 +1189,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                   <div key={i} className="flex items-center justify-between group">
                     <div className="flex items-center gap-2">
                       <span className="text-[10px] font-black text-slate-400 group-hover:text-brand-accent transition-colors">{v.subject}</span>
-                      <span className="text-[8px] font-black text-slate-300 font-mono">WT: {v.weight}%</span>
+                      <span className="text-[8px] font-black text-slate-300 font-mono">가중치: {v.weight}%</span>
                     </div>
                     <div className="flex items-center gap-2">
                        <span className="text-[11px] font-bold text-slate-600 italic">"{v.insight}"</span>
@@ -1137,7 +1220,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                  </h2>
                  <p className="mt-6 text-slate-400 text-sm font-bold flex items-center gap-2">
                     <Info className="w-4 h-4 text-brand-accent" /> 
-                    본 매장의 현주소를 돌파할 단 하나의 핵심 해결책(One-Point Solution)입니다.
+                    본 매장의 현주소를 돌파할 단 하나의 핵심 해결책입니다.
                  </p>
                </div>
             </div>
@@ -1301,9 +1384,9 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                 <div className="absolute left-[3.25rem] top-12 bottom-12 w-[2px] bg-slate-100" />
                 
                 {[
-                  { title: "Layer 1. 표면적 현상", desc: report.threeLayerAnalysis.surface, color: "slate", icon: Activity },
-                  { title: "Layer 2. 직접적인 원인", desc: report.threeLayerAnalysis.direct, color: "blue", icon: Target },
-                  { title: "Layer 3. 구조적·근본적 원인", desc: report.threeLayerAnalysis.structural, color: "accent", icon: ShieldCheck }
+                  { title: "1단계. 표면적 현상", desc: report.threeLayerAnalysis.surface, color: "slate", icon: Activity },
+                  { title: "2단계. 직접적인 원인", desc: report.threeLayerAnalysis.direct, color: "blue", icon: Target },
+                  { title: "3단계. 구조적·근본적 원인", desc: report.threeLayerAnalysis.structural, color: "accent", icon: ShieldCheck }
                 ].map((layer, idx) => (
                   <div key={idx} className="flex gap-8 relative group">
                     <div className={`w-10 h-10 rounded-xl ${
@@ -1447,7 +1530,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                   </div>
                   <div className="bg-slate-50 p-5 rounded-2xl border border-slate-100 flex flex-col justify-between">
                     <div>
-                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">공헌이익률 (CM Ratio)</span>
+                      <span className="text-[9px] font-black text-slate-400 uppercase tracking-widest block mb-1">공헌이익률</span>
                       <div className="text-2xl font-black text-brand-accent mb-3">{report.bepAnalysis.contributionMarginRatio}%</div>
                     </div>
                     <p className="text-[9px] font-bold text-slate-500 leading-tight">매출액 대비 고정비를 제외한 실질 이익 기여율입니다. {report.bepAnalysis.contributionMarginRatio > 40 ? '매우 고무적입니다.' : '개선이 필요합니다.'}</p>
@@ -1498,7 +1581,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                   <LayoutGrid className="w-4 h-4 text-brand-accent" />
                   <h3 className="font-black text-slate-900 text-sm uppercase tracking-tight">메뉴 엔지니어링 매트릭스 (BCG)</h3>
                 </div>
-                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">Growth vs Profit Matrix</span>
+                <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">성장·수익성 매트릭스</span>
               </div>
               <div className="p-10">
                 <div className="relative">
@@ -1514,7 +1597,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                           <Star className="w-5 h-5 text-emerald-600 fill-emerald-600" />
                         </div>
                         <div>
-                          <h5 className="text-xs font-black text-emerald-900 uppercase tracking-tight">인기 메뉴 (STAR)</h5>
+                          <h5 className="text-xs font-black text-emerald-900 uppercase tracking-tight">인기 메뉴 (스타)</h5>
                           <span className="text-[10px] text-emerald-600 font-bold tracking-tight">고수익·고판매 메뉴</span>
                         </div>
                       </div>
@@ -1531,7 +1614,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                           <Search className="w-5 h-5 text-purple-600" />
                         </div>
                         <div>
-                          <h5 className="text-xs font-black text-purple-900 uppercase tracking-tight">잠재 수익 메뉴 (PUZZLE)</h5>
+                          <h5 className="text-xs font-black text-purple-900 uppercase tracking-tight">잠재 수익 메뉴 (퍼즐)</h5>
                           <span className="text-[10px] text-purple-600 font-bold tracking-tight">고수익·저판매 메뉴</span>
                         </div>
                       </div>
@@ -1548,7 +1631,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                           <Activity className="w-5 h-5 text-blue-600" />
                         </div>
                         <div>
-                          <h5 className="text-xs font-black text-blue-900 uppercase tracking-tight">박리다매 메뉴 (PLOWHORSE)</h5>
+                          <h5 className="text-xs font-black text-blue-900 uppercase tracking-tight">박리다매 메뉴 (워크호스)</h5>
                           <span className="text-[10px] text-blue-600 font-bold tracking-tight">저수익·고판매 메뉴</span>
                         </div>
                       </div>
@@ -1565,7 +1648,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                           <Trash2 className="w-5 h-5 text-slate-500" />
                         </div>
                         <div>
-                          <h5 className="text-xs font-black text-slate-900 uppercase tracking-tight">정체 메뉴 (DOG)</h5>
+                          <h5 className="text-xs font-black text-slate-900 uppercase tracking-tight">정체 메뉴 (도그)</h5>
                           <span className="text-[10px] text-slate-500 font-bold tracking-tight">저수익·저판매 메뉴</span>
                         </div>
                       </div>
@@ -1585,7 +1668,7 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                   <Info className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
                   <div className="space-y-2">
                     <p className="text-[12px] font-bold text-slate-500 leading-relaxed italic">
-                      "Star 메뉴를 전방 배치하고, Plowhorse는 원가 절감을, Puzzle은 마케팅을 강화하며, Dog는 과감히 리뉴얼하거나 제거가 필요합니다."
+                      "스타 메뉴를 전방 배치하고, 워크호스는 원가 절감을, 퍼즐은 마케팅을 강화하며, 도그는 과감히 리뉴얼하거나 제거가 필요합니다."
                     </p>
                     <div className="p-3 bg-white/50 rounded-lg border border-slate-200/50">
                       <span className="text-[9px] font-black text-slate-400 uppercase block mb-1">분류 기준 및 데이터 근거</span>
@@ -1657,11 +1740,11 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
                     <div className="mt-2 space-y-2">
                       <div className="text-[11px] font-bold bg-orange-50 text-orange-700 px-3 py-2 rounded-lg border border-orange-100/50 flex items-start gap-2">
                         <AlertCircle className="w-3 h-3 shrink-0 mt-0.5 opacity-60" />
-                        <span><span className="font-black italic text-[9px] uppercase tracking-tighter mr-1 border-r pr-1">Barrier</span> {item.barrierResponse}</span>
+                        <span><span className="font-black italic text-[9px] uppercase tracking-tighter mr-1 border-r pr-1">장벽</span> {item.barrierResponse}</span>
                       </div>
                       <div className="text-[11px] font-bold bg-red-50 text-red-700 px-3 py-2 rounded-lg border border-red-100/50 flex items-start gap-2">
                         <ShieldCheck className="w-3 h-3 shrink-0 mt-0.5 opacity-60" />
-                        <span><span className="font-black italic text-[9px] uppercase tracking-tighter mr-1 border-r pr-1">Risk</span> {item.riskScenario}</span>
+                        <span><span className="font-black italic text-[9px] uppercase tracking-tighter mr-1 border-r pr-1">리스크</span> {item.riskScenario}</span>
                       </div>
                     </div>
                   </div>
@@ -1750,6 +1833,8 @@ function ReportView({ report, onReset }: { report: DiagnosisReport; onReset: () 
             </div>
           </div>
         </motion.div>
+
+        {teamSophia && <TeamSophiaReport result={teamSophia} />}
 
         <div className="bg-white border border-slate-200 rounded-3xl p-10 shadow-xl shadow-slate-200/30">
           <div className="flex items-center gap-3 mb-6">
