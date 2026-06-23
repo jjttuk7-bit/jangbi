@@ -4,8 +4,12 @@
 // OPENAI_API_KEY 는 Vercel 프로젝트 환경변수에 설정한다.
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { generateDiagnosisReport } from "../src/services/diagnosisCore";
-import { DiagnosisData } from "../src/types";
+import { generateDiagnosisReport } from "../src/services/diagnosisCore.js";
+import { DiagnosisData } from "../src/types.js";
+
+// 진단 리포트 생성은 OpenAI 응답이 길어 수십 초가 걸릴 수 있다.
+// Vercel 함수 기본 제한(10초)을 넘기지 않도록 실행 시간을 늘린다. (플랜 상한까지 적용)
+export const maxDuration = 60;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

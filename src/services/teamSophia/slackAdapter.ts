@@ -6,7 +6,7 @@
 // 이 모듈은 TeamSophiaSlackBundle 을 Slack chat.postMessage 페이로드 배열로 변환만 한다.
 // 실제 전송은 server/index.ts(백엔드)가 담당한다. (토큰 노출 방지 — 정의서 §5-6 내부 운영실)
 
-import { TeamSophiaSlackBundle } from "./types";
+import { TeamSophiaSlackBundle } from "./types.js";
 
 /** Slack chat.postMessage 한 건에 해당하는 페이로드 */
 export interface SlackMessage {

@@ -6,7 +6,7 @@
 //
 // 주의: 아직 실제 LLM은 호출하지 않는다. 여기서는 타입/결과 구조만 정의한다.
 
-import { DiagnosisData } from "../../types";
+import { DiagnosisData } from "../../types.js";
 
 export const CONTEXT_DOC = "docs/TEAM_SOPHIA_SLACK_CONTEXT.md";
 

@@ -14,14 +14,14 @@
 //   - 등록부에 없는 코치는 만들지 않는다. (§5-5)
 
 import OpenAI from "openai";
-import { DIAGNOSIS_ITEMS } from "../../constants";
+import { DIAGNOSIS_ITEMS } from "../../constants.js";
 import {
   COACHES,
   CoachId,
   TaskOwner,
   TeamSophiaEngineInput,
   TeamSophiaReport,
-} from "./types";
+} from "./types.js";
 
 function getAI(apiKey: string | undefined) {
   if (!apiKey) {

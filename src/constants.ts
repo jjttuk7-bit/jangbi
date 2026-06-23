@@ -1,4 +1,4 @@
-import { DiagnosisItem, DiagnosisSection } from "./types";
+import { DiagnosisItem, DiagnosisSection } from "./types.js";
 
 export const DIAGNOSIS_ITEMS: DiagnosisItem[] = [
   // SECTION 1. 매장 기본 정보

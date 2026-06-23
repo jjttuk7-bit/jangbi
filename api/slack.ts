@@ -5,8 +5,8 @@
 // SLACK_BOT_TOKEN 은 Vercel 프로젝트 환경변수에 설정한다(서버에서만 사용).
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { postBundleToSlack } from "../src/services/teamSophia/slackPost";
-import { TeamSophiaSlackBundle } from "../src/services/teamSophia/types";
+import { postBundleToSlack } from "../src/services/teamSophia/slackPost.js";
+import { TeamSophiaSlackBundle } from "../src/services/teamSophia/types.js";
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

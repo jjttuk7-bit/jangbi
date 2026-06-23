@@ -12,7 +12,7 @@ import {
   COACHES,
   TeamSophiaReport,
   TeamSophiaSlackBundle,
-} from "./types";
+} from "./types.js";
 
 const ALL_COACHES = [
   "sophia",

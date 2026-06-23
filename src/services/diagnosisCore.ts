@@ -5,8 +5,8 @@
 // → OpenAI 키가 클라이언트 번들에 포함되지 않는다.
 
 import OpenAI from "openai";
-import { DiagnosisData, DiagnosisReport } from "../types";
-import { DIAGNOSIS_ITEMS } from "../constants";
+import { DiagnosisData, DiagnosisReport } from "../types.js";
+import { DIAGNOSIS_ITEMS } from "../constants.js";
 
 function getAI(apiKey: string | undefined) {
   if (!apiKey) {

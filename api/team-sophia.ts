@@ -5,14 +5,17 @@
 // 리포트(§7)는 llmCore가 생성하고, Slack 번들(§6)·meta는 여기서 조립한다.
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { deriveStoreName, generateTeamSophiaReport } from "../src/services/teamSophia/llmCore";
-import { buildSlackBundle } from "../src/services/teamSophia/slackBundle";
+import { deriveStoreName, generateTeamSophiaReport } from "../src/services/teamSophia/llmCore.js";
+import { buildSlackBundle } from "../src/services/teamSophia/slackBundle.js";
 import {
   CONTEXT_DOC,
   TeamSophiaEngineInput,
   TeamSophiaEngineResult,
-} from "../src/services/teamSophia/types";
-import { DiagnosisData } from "../src/types";
+} from "../src/services/teamSophia/types.js";
+import { DiagnosisData } from "../src/types.js";
+
+// 팀소피아 LLM 생성도 수십 초가 걸릴 수 있으므로 실행 시간을 늘린다.
+export const maxDuration = 60;
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {

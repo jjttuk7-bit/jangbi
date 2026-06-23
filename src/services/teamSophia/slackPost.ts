@@ -6,8 +6,8 @@
 //
 // 주의: 이 모듈은 봇 토큰을 받으므로 절대 브라우저에서 import 하지 않는다. (정의서 §5-6)
 
-import { buildSlackMessages } from "./slackAdapter";
-import { TeamSophiaSlackBundle } from "./types";
+import { buildSlackMessages } from "./slackAdapter.js";
+import { TeamSophiaSlackBundle } from "./types.js";
 
 export interface SlackPostResult {
   channel: string;
