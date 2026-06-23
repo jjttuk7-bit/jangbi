@@ -6,7 +6,7 @@
 //
 // 데이터: /api/diagnosis(정밀 숫자=DiagnosisReport) + /api/team-sophia(코치 내러티브=TeamSophiaReport)
 
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { motion } from "motion/react";
 import {
   ResponsiveContainer,
@@ -42,6 +42,7 @@ import {
   HelpCircle,
   CalendarDays,
   Quote,
+  ChevronDown,
 } from "lucide-react";
 import { DiagnosisReport, DiagnosisData } from "../types";
 import { COACHES, CoachId, TaskOwner, TeamSophiaEngineResult } from "../services/teamSophia/types";
@@ -409,6 +410,7 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
   const ts = teamSophia?.report;
   const storeName = teamSophia?.slack.summary.storeName ?? "사장님 매장";
   const dateStr = new Date(teamSophia?.meta.generatedAt ?? Date.now()).toLocaleDateString("ko-KR");
+  const [showDraft, setShowDraft] = useState(false);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-slate-50 flex flex-col pb-32">
@@ -451,9 +453,24 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
           })}
         </div>
 
-        {/* 팀소피아(Hermes) 라이브 — 자기개선 코치 팀의 실제 응답 */}
+        {/* 팀소피아(Hermes) 라이브 — 자기개선 코치 팀의 실제 응답 (메인) */}
         {diagnosisData && <HermesLivePanel diagnosisData={diagnosisData} />}
 
+        {/* 아래는 AI 빠른 초안 · 정밀 데이터 (보조, 기본 접힘) */}
+        <div className="flex items-center gap-3 my-1">
+          <div className="flex-1 h-px bg-slate-200" />
+          <button
+            onClick={() => setShowDraft((v) => !v)}
+            className="inline-flex items-center gap-2 text-xs font-black text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm"
+          >
+            <ChevronDown className={`w-4 h-4 transition-transform ${showDraft ? "rotate-180" : ""}`} />
+            AI 빠른 초안 · 정밀 데이터 {showDraft ? "접기" : "보기"} (보조)
+          </button>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+
+        {showDraft && (
+          <>
         {/* ========================= 소피아 — 종합 진단 ========================= */}
         <CoachSection
           coachId="sophia"
@@ -813,6 +830,8 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
         <div className="text-center py-12 opacity-40">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] leading-relaxed">팀소피아 · 소상공인 AI 컨설팅 팀<br />엔진 {teamSophia?.meta.engine ?? "—"} · 대외비 리포트</p>
         </div>
+          </>
+        )}
       </main>
     </motion.div>
   );
