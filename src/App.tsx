@@ -255,7 +255,7 @@ export default function App() {
   };
 
   if (report) {
-    return <ConsultingReport report={report} teamSophia={teamSophia} onReset={reset} />;
+    return <ConsultingReport report={report} teamSophia={teamSophia} diagnosisData={data} onReset={reset} />;
   }
 
   return (

@@ -43,8 +43,9 @@ import {
   CalendarDays,
   Quote,
 } from "lucide-react";
-import { DiagnosisReport } from "../types";
+import { DiagnosisReport, DiagnosisData } from "../types";
 import { COACHES, CoachId, TaskOwner, TeamSophiaEngineResult } from "../services/teamSophia/types";
+import { HermesLivePanel } from "./HermesLivePanel";
 
 // ===========================================================================
 // 정밀 데이터 차트 헬퍼 (기존 장사비서 리포트에서 이동 — 이제 소유 코치 섹션 안에서 렌더)
@@ -404,7 +405,7 @@ function SubHead({ children }: { children: ReactNode }) {
 // 통합 컨설팅 리포트
 // ===========================================================================
 
-export function ConsultingReport({ report, teamSophia, onReset }: { report: DiagnosisReport; teamSophia: TeamSophiaEngineResult | null; onReset: () => void }) {
+export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }: { report: DiagnosisReport; teamSophia: TeamSophiaEngineResult | null; diagnosisData?: DiagnosisData; onReset: () => void }) {
   const ts = teamSophia?.report;
   const storeName = teamSophia?.slack.summary.storeName ?? "사장님 매장";
   const dateStr = new Date(teamSophia?.meta.generatedAt ?? Date.now()).toLocaleDateString("ko-KR");
@@ -449,6 +450,9 @@ export function ConsultingReport({ report, teamSophia, onReset }: { report: Diag
             );
           })}
         </div>
+
+        {/* 팀소피아(Hermes) 라이브 — 자기개선 코치 팀의 실제 응답 */}
+        {diagnosisData && <HermesLivePanel diagnosisData={diagnosisData} />}
 
         {/* ========================= 소피아 — 종합 진단 ========================= */}
         <CoachSection
