@@ -4,8 +4,8 @@
 // 장사비서 폼 입력값 + 사장님이 정의한 운영 규칙을 Hermes가 이해하는 형식으로 조립한다.
 // Hermes는 /opt/data/team-sophia/ 파일을 읽고 팀소피아 코치로 응답한다.
 
-import { DIAGNOSIS_ITEMS } from "../../constants";
-import { DiagnosisData } from "../../types";
+import { DIAGNOSIS_ITEMS } from "../../constants.js";
+import { DiagnosisData } from "../../types.js";
 
 /**
  * @param diagnosis 장사비서 폼 입력
