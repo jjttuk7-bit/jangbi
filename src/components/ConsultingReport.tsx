@@ -6,7 +6,7 @@
 //
 // 데이터: /api/diagnosis(정밀 숫자=DiagnosisReport) + /api/team-sophia(코치 내러티브=TeamSophiaReport)
 
-import { ReactNode, useState } from "react";
+import { ReactNode } from "react";
 import { motion } from "motion/react";
 import {
   ResponsiveContainer,
@@ -42,7 +42,6 @@ import {
   HelpCircle,
   CalendarDays,
   Quote,
-  ChevronDown,
 } from "lucide-react";
 import { DiagnosisReport, DiagnosisData } from "../types";
 import { COACHES, CoachId, TaskOwner, TeamSophiaEngineResult } from "../services/teamSophia/types";
@@ -410,7 +409,6 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
   const ts = teamSophia?.report;
   const storeName = teamSophia?.slack.summary.storeName ?? "사장님 매장";
   const dateStr = new Date(teamSophia?.meta.generatedAt ?? Date.now()).toLocaleDateString("ko-KR");
-  const [showDraft, setShowDraft] = useState(false);
 
   return (
     <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="min-h-screen bg-slate-50 flex flex-col pb-32">
@@ -440,37 +438,12 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
       </header>
 
       <main className="max-w-5xl w-full mx-auto px-4 md:px-8 mt-10 space-y-8">
-        {/* 5인 코치 헤더 라인 */}
-        <div className="flex items-center justify-center gap-2 flex-wrap">
-          {(Object.keys(COACH_THEME) as CoachId[]).map((cid) => {
-            const t = COACH_THEME[cid];
-            return (
-              <div key={cid} className="flex items-center gap-2 bg-white border border-slate-200 rounded-full pl-1.5 pr-3 py-1 shadow-sm">
-                <span className={`w-6 h-6 rounded-full border ${t.ring} ${t.text} flex items-center justify-center text-[10px] font-black`}>{t.initial}</span>
-                <span className="text-[11px] font-bold text-slate-500">{t.name.split(" ").slice(-1)[0]}</span>
-              </div>
-            );
-          })}
+        {/* ① 기초 분석 배너 (gpt-4o · 즉시) */}
+        <div className="bg-slate-100 border border-slate-200 rounded-2xl px-5 py-3.5 flex items-start gap-3">
+          <span className="text-xs font-black text-white bg-slate-700 rounded-md px-2 py-1 shrink-0">① 기초 분석</span>
+          <span className="text-[12.5px] text-slate-500 leading-relaxed">AI가 입력값으로 <b className="text-slate-700">즉시 생성한 참고용 분석</b>입니다. 진짜 정밀 전문 분석은 맨 아래 <b className="text-violet-600">‘팀소피아 정밀 분석’</b> 버튼에서 받으세요.</span>
         </div>
 
-        {/* 팀소피아(Hermes) 라이브 — 자기개선 코치 팀의 실제 응답 (메인) */}
-        {diagnosisData && <HermesLivePanel diagnosisData={diagnosisData} />}
-
-        {/* 아래는 AI 빠른 초안 · 정밀 데이터 (보조, 기본 접힘) */}
-        <div className="flex items-center gap-3 my-1">
-          <div className="flex-1 h-px bg-slate-200" />
-          <button
-            onClick={() => setShowDraft((v) => !v)}
-            className="inline-flex items-center gap-2 text-xs font-black text-slate-500 hover:text-slate-700 bg-white border border-slate-200 rounded-full px-4 py-2 shadow-sm"
-          >
-            <ChevronDown className={`w-4 h-4 transition-transform ${showDraft ? "rotate-180" : ""}`} />
-            AI 빠른 초안 · 정밀 데이터 {showDraft ? "접기" : "보기"} (보조)
-          </button>
-          <div className="flex-1 h-px bg-slate-200" />
-        </div>
-
-        {showDraft && (
-          <>
         {/* ========================= 소피아 — 종합 진단 ========================= */}
         <CoachSection
           coachId="sophia"
@@ -827,11 +800,17 @@ export function ConsultingReport({ report, teamSophia, diagnosisData, onReset }:
           </section>
         )}
 
+        {/* ② 팀소피아 정밀 분석 (버튼 → Hermes 코치팀 실제 전문 분석) */}
+        <div className="flex items-center gap-3 pt-2">
+          <div className="flex-1 h-px bg-slate-200" />
+          <span className="text-xs font-black text-white bg-violet-600 rounded-md px-2 py-1">② 팀소피아 정밀 분석</span>
+          <div className="flex-1 h-px bg-slate-200" />
+        </div>
+        {diagnosisData && <HermesLivePanel diagnosisData={diagnosisData} />}
+
         <div className="text-center py-12 opacity-40">
           <p className="text-[10px] font-black uppercase tracking-[0.3em] leading-relaxed">팀소피아 · 소상공인 AI 컨설팅 팀<br />엔진 {teamSophia?.meta.engine ?? "—"} · 대외비 리포트</p>
         </div>
-          </>
-        )}
       </main>
     </motion.div>
   );

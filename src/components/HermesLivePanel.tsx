@@ -120,8 +120,8 @@ export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisDat
           <Users2 className="w-6 h-6" />
         </div>
         <div className="flex-1">
-          <h3 className="text-lg font-black tracking-tight">팀소피아 라이브 (Hermes)</h3>
-          <p className="text-[11px] font-bold text-white/70">자기개선하는 5인 코치 팀의 실제 응답 · 위 리포트는 즉시 초안(AI 보조)</p>
+          <h3 className="text-lg font-black tracking-tight">팀소피아 정밀 분석</h3>
+          <p className="text-[11px] font-bold text-white/70">자기개선하는 5인 코치 팀의 실제 전문 분석 · 위 기초 분석과 별개로 진짜 컨설팅을 받습니다</p>
         </div>
         <Sparkles className="w-5 h-5 text-white/80" />
       </div>
@@ -135,7 +135,7 @@ export function HermesLivePanel({ diagnosisData }: { diagnosisData: DiagnosisDat
             onClick={run}
             className="inline-flex items-center gap-2 bg-white text-violet-700 px-5 py-3 rounded-xl text-sm font-black shadow-lg hover:bg-violet-50 active:scale-95 transition-all"
           >
-            <Send className="w-4 h-4" /> 팀소피아 팀에게 실시간 검토 요청
+            <Send className="w-4 h-4" /> 팀소피아 정밀 분석 받기
           </button>
         </div>
       )}
