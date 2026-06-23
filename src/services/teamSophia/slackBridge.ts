@@ -61,6 +61,21 @@ export async function resolveHermesUserId(
   return undefined;
 }
 
+/** 채널 최근 기록에서 '브릿지 봇이 아닌' 봇(=코치 에이전트)의 user id를 찾는다. */
+export async function resolveOtherBotId(
+  token: string,
+  channelId: string,
+  excludeUserId: string
+): Promise<string | undefined> {
+  const data = await slackGet(token, "conversations.history", { channel: channelId, limit: "100" });
+  if (!data.ok) return undefined;
+  for (const m of data.messages ?? []) {
+    const isBot = Boolean(m.bot_id) || m.subtype === "bot_message";
+    if (isBot && m.user && m.user !== excludeUserId) return m.user;
+  }
+  return undefined;
+}
+
 export interface PostResult {
   ok: boolean;
   channel?: string;

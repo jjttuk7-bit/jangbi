@@ -6,6 +6,35 @@
 
 import { DIAGNOSIS_ITEMS } from "../../constants.js";
 import { DiagnosisData } from "../../types.js";
+import { CoachId, COACHES } from "./types.js";
+
+function filledFields(diagnosis: DiagnosisData): string {
+  return DIAGNOSIS_ITEMS.filter((i) => {
+    const v = diagnosis[i.id];
+    return v != null && String(v).trim() !== "";
+  })
+    .map((i) => `- ${i.label}: ${diagnosis[i.id]}`)
+    .join("\n");
+}
+
+/**
+ * 단일 코치 에이전트(독립 프로필)용 프롬프트. 해당 코치 채널에서 그 코치 역할로만 응답.
+ * @param mention 코치 에이전트를 깨우는 멘션 ("<@U...>" 권장)
+ */
+export function buildCoachPrompt(coachId: CoachId, diagnosis: DiagnosisData, mention: string): string {
+  const c = COACHES[coachId];
+  return `${mention}
+
+너는 팀소피아의 ${c.name}이야. /opt/data/team-sophia/coaches/${coachId}/ 의 정체성 문서를 읽고, ${c.role} 역할로만 응답해.
+
+상황 (장사비서 폼 입력):
+${filledFields(diagnosis) || "(아직 입력된 데이터가 거의 없음)"}
+
+규칙:
+- 사용자를 "사장님"이라고 불러라.
+- 없는 숫자/정보를 지어내지 말고, 분석에 필요한 최소 데이터 양식을 안내해라.
+- 네 전문 영역(${c.role})에만 집중해서 진단/제안한다. 다른 코치 영역은 다루지 않는다.`;
+}
 
 /**
  * @param diagnosis 장사비서 폼 입력

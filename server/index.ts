@@ -14,8 +14,9 @@ import { TeamSophiaSlackBundle, TeamSophiaEngineInput, CONTEXT_DOC } from "../sr
 import { generateDiagnosisReport } from "../src/services/diagnosisCore";
 import { deriveStoreName, generateTeamSophiaReport } from "../src/services/teamSophia/llmCore";
 import { buildSlackBundle } from "../src/services/teamSophia/slackBundle";
-import { postRequest, resolveChannelId, resolveHermesUserId, getThreadReplies } from "../src/services/teamSophia/slackBridge";
-import { buildHermesPrompt } from "../src/services/teamSophia/hermesPrompt";
+import { postRequest, resolveChannelId, resolveHermesUserId, resolveOtherBotId, getThreadReplies } from "../src/services/teamSophia/slackBridge";
+import { buildHermesPrompt, buildCoachPrompt } from "../src/services/teamSophia/hermesPrompt";
+import { COACHES, CoachId } from "../src/services/teamSophia/types";
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -115,6 +116,30 @@ app.get("/api/sophia-poll", async (req, res) => {
     return res.json({ ok: true, count: replies.length, replies });
   } catch (e: any) {
     console.error("[sophia-poll] 오류:", e);
+    return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
+  }
+});
+
+// 로컬 dev: 특정 코치 에이전트에게 일 보내기 (멀티에이전트 스테이징)
+app.post("/api/coach-ask", async (req, res) => {
+  if (!SLACK_BRIDGE_BOT_TOKEN) return res.status(500).json({ ok: false, error: "SLACK_BRIDGE_BOT_TOKEN 미설정" });
+  const coachId = req.body?.coachId as CoachId | undefined;
+  const diagnosis = req.body?.diagnosis;
+  if (!coachId || !COACHES[coachId]) return res.status(400).json({ ok: false, error: "유효한 coachId 필요" });
+  if (!diagnosis || typeof diagnosis !== "object") return res.status(400).json({ ok: false, error: "diagnosis 필요" });
+  try {
+    const channelId = await resolveChannelId(SLACK_BRIDGE_BOT_TOKEN, COACHES[coachId].channel);
+    if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${COACHES[coachId].channel})` });
+    const bridgeBotId = process.env.SLACK_BRIDGE_BOT_USER_ID || "U0BCDG94430";
+    const envKey = "SLACK_AGENT_" + coachId.toUpperCase().replace(/-/g, "_");
+    const agentId = process.env[envKey] || (await resolveOtherBotId(SLACK_BRIDGE_BOT_TOKEN, channelId, bridgeBotId));
+    const mention = agentId ? `<@${agentId}>` : `@${COACHES[coachId].shortName}`;
+    const prompt = buildCoachPrompt(coachId, diagnosis, mention);
+    const result = await postRequest(SLACK_BRIDGE_BOT_TOKEN, channelId, prompt);
+    if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
+    return res.json({ ok: true, coachId, channel: result.channel, ts: result.ts, agentResolved: Boolean(agentId) });
+  } catch (e: any) {
+    console.error("[coach-ask] 오류:", e);
     return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
   }
 });
