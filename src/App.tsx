@@ -71,9 +71,6 @@ export default function App() {
   const [loadingStage, setLoadingStage] = useState(0);
   const [showMustFillOnly, setShowMustFillOnly] = useState(false);
   const [lastSaved, setLastSaved] = useState<string | null>(null);
-  const [errorMessage, setErrorMessage] = useState("");
-  const [reportMarkdown, setReportMarkdown] = useState("");
-  const [reportPath, setReportPath] = useState("");
 
   useEffect(() => {
     localStorage.setItem("diagnosis_data", JSON.stringify(data));
@@ -209,22 +206,6 @@ export default function App() {
     }
   };
 
-  /** 장사비서 폼 입력값(data) 전체를 Team Sophia Pro API가 기대하는 한글 key의 JSON으로 변환한다. */
-  const buildTeamSophiaProPayload = () => {
-    const payload: Record<string, string | number> = {};
-    DIAGNOSIS_ITEMS.forEach((item) => {
-      const raw = data[item.id];
-      if (item.type === "number" || item.type === "percentage") {
-        payload[item.label] = raw == null || raw === "" ? 0 : Number(raw);
-      } else {
-        payload[item.label] = raw ?? "";
-      }
-    });
-    payload["매장명"] = (data[1] ? String(data[1]) : "") || "사장님 매장";
-    payload["기초 분석"] = report?.summary ?? "";
-    return payload;
-  };
-
   const handleSubmit = async () => {
     // Check must-fill items
     const missingMustFill = DIAGNOSIS_ITEMS.filter(item => item.isMustFill && !data[item.id]);
@@ -234,55 +215,32 @@ export default function App() {
     }
 
     setIsSubmitting(true);
-    setErrorMessage("");
-    setReportMarkdown("");
-    setReportPath("");
     try {
-      const payload = buildTeamSophiaProPayload();
-      const response = await fetch("/api/team-sophia-pro", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
-      const result = await response.json();
-
-      if (!result.ok) {
-        throw new Error(result.error || "Team Sophia 정밀 진단 생성 실패");
-      }
-
-      setReportMarkdown(result.report_markdown || "");
-      setReportPath(result.report_path || "");
-    } catch (error: any) {
-      console.error("Team Sophia Pro API Error:", error);
-      setErrorMessage(
-        error instanceof Error ? error.message : "진단 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요."
-      );
-
-      // 기존 로컬 분석(폴백): Pro API 연결이 안 될 때만 보조적으로 시도한다.
+      const result = await generateDiagnosis(data);
+      setReport(result);
+      // 팀소피아 엔진: LLM 우선, 실패 시 더미로 폴백
       try {
-        const localResult = await generateDiagnosis(data);
-        setReport(localResult);
+        let ts;
         try {
-          let ts;
-          try {
-            ts = await runLlmEngine({ diagnosis: data });
-          } catch (llmError) {
-            console.warn("팀소피아 LLM 엔진 실패, 더미 엔진으로 폴백:", llmError);
-            ts = await runDummyEngine({ diagnosis: data });
-          }
-          setTeamSophia(ts);
-          sendTeamSophiaToSlack(ts.slack)
-            .then((r) => {
-              if (!r.ok) console.warn("Slack 전송 실패:", r.error ?? r.results);
-            })
-            .catch((e) => console.warn("Slack 전송 예외:", e));
-        } catch (tsError) {
-          console.error("Team Sophia Engine Error:", tsError);
-          setTeamSophia(null);
+          ts = await runLlmEngine({ diagnosis: data });
+        } catch (llmError) {
+          console.warn("팀소피아 LLM 엔진 실패, 더미 엔진으로 폴백:", llmError);
+          ts = await runDummyEngine({ diagnosis: data });
         }
-      } catch (localError) {
-        console.error("로컬 분석 폴백도 실패:", localError);
+        setTeamSophia(ts);
+        // Slack 내부 운영실로 요약/검수/로그 전송 (정의서 §6). 실패해도 무시.
+        sendTeamSophiaToSlack(ts.slack)
+          .then((r) => {
+            if (!r.ok) console.warn("Slack 전송 실패:", r.error ?? r.results);
+          })
+          .catch((e) => console.warn("Slack 전송 예외:", e));
+      } catch (tsError) {
+        console.error("Team Sophia Engine Error:", tsError);
+        setTeamSophia(null);
       }
+    } catch (error: any) {
+      console.error("Diagnosis Error:", error);
+      alert(error.message || `분석 리포트 생성 중 오류가 발생했습니다. (${error?.status ?? "알 수 없는 오류"}) 다시 시도해주세요.`);
     } finally {
       setIsSubmitting(false);
     }
@@ -291,33 +249,10 @@ export default function App() {
   const reset = () => {
     setReport(null);
     setTeamSophia(null);
-    setReportMarkdown("");
-    setReportPath("");
-    setErrorMessage("");
     setCurrentSectionIndex(0);
     setData({});
     localStorage.removeItem("diagnosis_data");
   };
-
-  if (reportMarkdown) {
-    return (
-      <div className="min-h-screen flex items-center justify-center px-6 py-16 bg-slate-50">
-        <div className="max-w-3xl w-full bg-white rounded-2xl shadow-xl border border-slate-100 p-10 space-y-6">
-          <div className="flex items-center gap-3 text-emerald-600">
-            <CheckCircle2 className="w-6 h-6" />
-            <h2 className="text-xl font-black text-slate-900">Team Sophia 정밀 진단이 완료되었습니다.</h2>
-          </div>
-          {reportPath && (
-            <p className="text-xs font-mono text-slate-400 break-all">저장 경로: {reportPath}</p>
-          )}
-          <pre className="whitespace-pre-wrap text-sm text-slate-700 leading-relaxed bg-slate-50 rounded-xl p-6 border border-slate-100 max-h-[70vh] overflow-y-auto">
-            {reportMarkdown}
-          </pre>
-          <button onClick={reset} className="btn-primary">처음으로</button>
-        </div>
-      </div>
-    );
-  }
 
   if (report) {
     return <ConsultingReport report={report} teamSophia={teamSophia} diagnosisData={data} onReset={reset} />;
@@ -374,12 +309,6 @@ export default function App() {
     </header>
 
       <main className="max-w-6xl mx-auto px-8 mt-10">
-        {errorMessage && (
-          <div className="mb-8 flex items-start gap-3 bg-red-50 border border-red-100 text-red-700 rounded-xl px-5 py-4 text-sm font-bold">
-            <AlertCircle className="w-4 h-4 mt-0.5 shrink-0" />
-            <span>진단 생성 중 문제가 발생했습니다. 잠시 후 다시 시도해주세요. ({errorMessage})</span>
-          </div>
-        )}
         <div className="flex flex-col lg:flex-row gap-12">
           {/* Sidebar Navigation */}
           <aside className="w-full lg:w-72 shrink-0 space-y-2 hidden lg:block">
@@ -647,9 +576,6 @@ export default function App() {
               </div>
               
               <div className="text-center space-y-4 mb-12">
-                <p className="text-brand-accent text-xs font-black uppercase tracking-widest">
-                  Team Sophia가 정밀 진단 리포트를 생성 중입니다...
-                </p>
                 <motion.div
                   key={loadingStage}
                   initial={{ opacity: 0, y: 20 }}
