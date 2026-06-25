@@ -14,8 +14,8 @@ import { TeamSophiaSlackBundle, TeamSophiaEngineInput, CONTEXT_DOC } from "../sr
 import { generateDiagnosisReport } from "../src/services/diagnosisCore";
 import { deriveStoreName, generateTeamSophiaReport } from "../src/services/teamSophia/llmCore";
 import { buildSlackBundle } from "../src/services/teamSophia/slackBundle";
-import { postRequest, resolveChannelId, resolveHermesUserId, resolveOtherBotId, getThreadReplies } from "../src/services/teamSophia/slackBridge";
-import { buildHermesPrompt, buildCoachPrompt } from "../src/services/teamSophia/hermesPrompt";
+import { postRequest, sendCoachPromptSequence, resolveChannelId, resolveHermesUserId, resolveOtherBotId, getThreadReplies } from "../src/services/teamSophia/slackBridge";
+import { buildTeamSophiaCoachPrompts, buildCoachPrompt } from "../src/services/teamSophia/hermesPrompt";
 import { COACHES, CoachId } from "../src/services/teamSophia/types";
 
 const app = express();
@@ -96,10 +96,13 @@ app.post("/api/sophia-ask", async (req, res) => {
     const hermesId = await resolveHermesUserId(SLACK_BRIDGE_BOT_TOKEN, channelId);
     const mention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
     const basicSummary = typeof req.body?.basicSummary === "string" ? req.body.basicSummary : "";
-    const prompt = buildHermesPrompt(diagnosis, mention, basicSummary);
-    const result = await postRequest(SLACK_BRIDGE_BOT_TOKEN, channelId, prompt);
-    if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
-    return res.json({ ok: true, channel: result.channel, ts: result.ts, hermesResolved: Boolean(hermesId) });
+    const coachPrompts = buildTeamSophiaCoachPrompts(diagnosis, mention, basicSummary);
+    const result = await sendCoachPromptSequence(SLACK_BRIDGE_BOT_TOKEN, channelId, coachPrompts);
+    if (!result.ts) return res.status(502).json({ ok: false, error: `게시 실패: ${result.failures.map((f) => `${f.coach}(${f.error})`).join(", ")}` });
+    if (result.failures.length > 0) {
+      console.error("[sophia-ask] 일부 코치 요청 전송 실패:", result.failures);
+    }
+    return res.json({ ok: true, channel: result.channel, ts: result.ts, hermesResolved: Boolean(hermesId), failures: result.failures });
   } catch (e: any) {
     console.error("[sophia-ask] 오류:", e);
     return res.status(500).json({ ok: false, error: e?.message ?? String(e) });

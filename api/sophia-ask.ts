@@ -4,8 +4,8 @@
 // 실제 응답 수거는 /api/sophia-poll 에서 비동기로 폴링한다.
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { postRequest, resolveChannelId, resolveHermesUserId } from "../src/services/teamSophia/slackBridge.js";
-import { buildHermesPrompt } from "../src/services/teamSophia/hermesPrompt.js";
+import { sendCoachPromptSequence, resolveChannelId, resolveHermesUserId } from "../src/services/teamSophia/slackBridge.js";
+import { buildTeamSophiaCoachPrompts } from "../src/services/teamSophia/hermesPrompt.js";
 import { DiagnosisData } from "../src/types.js";
 
 const CHANNEL = process.env.SLACK_TEAM_SOPHIA_CHANNEL || "#team-sophia-daily";
@@ -35,12 +35,21 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const hermesId = await resolveHermesUserId(token, channelId);
     const mention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
     const basicSummary = typeof body?.basicSummary === "string" ? body.basicSummary : "";
-    const prompt = buildHermesPrompt(diagnosis, mention, basicSummary);
+    const coachPrompts = buildTeamSophiaCoachPrompts(diagnosis, mention, basicSummary);
 
-    const result = await postRequest(token, channelId, prompt);
-    if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
+    const result = await sendCoachPromptSequence(token, channelId, coachPrompts);
+    if (!result.ts) return res.status(502).json({ ok: false, error: `게시 실패: ${result.failures.map((f) => `${f.coach}(${f.error})`).join(", ")}` });
+    if (result.failures.length > 0) {
+      console.error("[api/sophia-ask] 일부 코치 요청 전송 실패:", result.failures);
+    }
 
-    return res.status(200).json({ ok: true, channel: result.channel, ts: result.ts, hermesResolved: Boolean(hermesId) });
+    return res.status(200).json({
+      ok: true,
+      channel: result.channel,
+      ts: result.ts,
+      hermesResolved: Boolean(hermesId),
+      failures: result.failures,
+    });
   } catch (e: any) {
     console.error("[api/sophia-ask] 오류:", e);
     return res.status(500).json({ ok: false, error: e?.message ?? String(e) });

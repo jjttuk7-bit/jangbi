@@ -89,6 +89,62 @@ export async function postRequest(token: string, channelId: string, text: string
   return { ok: data.ok, channel: data.channel, ts: data.ts, error: data.error };
 }
 
+/** 기존 스레드(threadTs)에 답글 형태로 메시지를 게시한다. */
+export async function postThreadReply(
+  token: string,
+  channelId: string,
+  threadTs: string,
+  text: string
+): Promise<PostResult> {
+  const data = await slackPost(token, "chat.postMessage", { channel: channelId, text, thread_ts: threadTs });
+  return { ok: data.ok, channel: data.channel, ts: data.ts, error: data.error };
+}
+
+export interface CoachSendItem {
+  coach: string;
+  title: string;
+  prompt: string;
+}
+
+export interface CoachSendResult {
+  ok: boolean;
+  channel?: string;
+  /** 스레드 루트 ts (첫 메시지의 ts). 이후 폴링에 사용한다. */
+  ts?: string;
+  /** 전송 실패한 코치 요청 목록(코치명 + 에러). */
+  failures: { coach: string; error: string }[];
+}
+
+/**
+ * 코치별 프롬프트 배열을 같은 Slack 스레드에 순차 전송한다.
+ * 첫 항목이 스레드 루트가 되고, 나머지는 thread_ts로 그 스레드에 답글로 이어 붙인다.
+ * 일부 전송이 실패해도 나머지는 계속 시도하고, 실패한 코치는 failures에 기록한다.
+ */
+export async function sendCoachPromptSequence(
+  token: string,
+  channelId: string,
+  items: CoachSendItem[]
+): Promise<CoachSendResult> {
+  const failures: { coach: string; error: string }[] = [];
+  if (items.length === 0) return { ok: false, failures: [{ coach: "-", error: "전송할 프롬프트가 없습니다." }] };
+
+  const root = await postRequest(token, channelId, items[0].prompt);
+  if (!root.ok) {
+    failures.push({ coach: items[0].coach, error: root.error || "알 수 없는 오류" });
+    return { ok: false, channel: root.channel, failures };
+  }
+
+  for (const item of items.slice(1)) {
+    const result = await postThreadReply(token, channelId, root.ts!, item.prompt);
+    if (!result.ok) {
+      console.error(`[sendCoachPromptSequence] ${item.coach} 전송 실패:`, result.error);
+      failures.push({ coach: item.coach, error: result.error || "알 수 없는 오류" });
+    }
+  }
+
+  return { ok: failures.length === 0, channel: root.channel, ts: root.ts, failures };
+}
+
 export interface ThreadReply {
   user?: string;
   username?: string;
