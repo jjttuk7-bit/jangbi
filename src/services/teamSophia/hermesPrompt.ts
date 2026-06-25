@@ -76,21 +76,14 @@ export function buildHermesPrompt(diagnosis: DiagnosisData, hermesMention = "@He
 
   return `${hermesMention}
 
-/opt/data/team-sophia/sophia/ 문서,
-/opt/data/team-sophia/coaches/anne-data/ 문서,
-/opt/data/team-sophia/coaches/claire-cs/ 문서,
-/opt/data/team-sophia/coaches/jane-marketer/ 문서,
-/opt/data/team-sophia/coaches/kelly-creator/ 문서,
-/opt/data/team-sophia/shared/coach_registry.md,
-/opt/data/team-sophia/slack/operating_rules.md 를 읽고,
-팀소피아 5인 코치로 응답해줘.
+아래 Team Sophia 역할 정의와 운영 규칙을 기준으로 응답해줘.
+실제 파일 경로를 읽을 수 있는 환경이면 참고하고, 읽을 수 없다면 파일을 읽었다고 말하지 마라.
 
 상황:
 아래는 장사비서 폼에 입력된 사장님 매장 현황이야.
 ${filled || "(아직 입력된 데이터가 거의 없음)"}
 ${basicBlock}
 너는 단일 조언자가 아니다. 반드시 Team Sophia 5인 코치 운영 방식으로 응답해야 한다.
-중요: Slack 환경에서 실제 파일 경로를 읽을 수 없다면, 파일을 읽었다고 말하지 마라. 대신 아래 역할 정의와 출력 규칙을 기준으로 5인 코치처럼 분업해서 응답하라.
 
 각 코치 역할:
 - Sophia: 총괄 오케스트레이터. 기초 분석과 다른 점, 우선순위, 실행 순서를 정리한다.
@@ -290,14 +283,14 @@ Kelly는 반드시 실제 콘텐츠 콘티를 작성해야 한다.
 ## 8. 추가로 필요한 데이터
 
 ### 반드시 필요한 데이터
-1.
-2.
-3.
+- 요일별 매출 원본
+- 시간대별 매출 원본
+- 메뉴별 판매량과 매출
 
 ### 있으면 좋은 데이터
-1.
-2.
-3.
+- 주류 매출 비중
+- 리뷰 키워드 빈도
+- 직원별 피크타임 배치표
 
 ### 사장님이 기록할 최소 양식
 | 날짜 | 요일 | 시간대 | 매출 | 객수 | 대표 메뉴 | 특이사항 |
