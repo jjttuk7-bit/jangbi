@@ -4,17 +4,10 @@
 // 앤 에이전트가 자기 채널에서 실제로 작업(가시적) → /api/sophia-poll 로 응답 수거.
 
 import type { VercelRequest, VercelResponse } from "@vercel/node";
-import { postRequest, resolveChannelId, resolveOtherBotId } from "../src/services/teamSophia/slackBridge.js";
+import { postRequest, resolveCoachChannelMention } from "../src/services/teamSophia/slackBridge.js";
 import { buildCoachPrompt } from "../src/services/teamSophia/hermesPrompt.js";
 import { COACHES, CoachId } from "../src/services/teamSophia/types.js";
 import { DiagnosisData } from "../src/types.js";
-
-// 코치별 에이전트 봇 user id를 env로 명시하면 가장 확실(없으면 채널에서 자동 해석).
-// 예: SLACK_AGENT_ANNE_DATA=U...
-function agentIdEnv(coachId: CoachId): string | undefined {
-  const key = "SLACK_AGENT_" + coachId.toUpperCase().replace(/-/g, "_");
-  return process.env[key];
-}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== "POST") {
@@ -34,14 +27,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!diagnosis || typeof diagnosis !== "object") return res.status(400).json({ ok: false, error: "diagnosis가 필요합니다." });
 
   try {
-    const channelId = await resolveChannelId(token, COACHES[coachId].channel);
-    if (!channelId) return res.status(500).json({ ok: false, error: `채널을 찾지 못했습니다(${COACHES[coachId].channel}). 봇 초대 확인.` });
-
-    // 코치 에이전트 봇 멘션: 요청 body.agentId > env > 채널 자동 해석
     const bridgeBotId = process.env.SLACK_BRIDGE_BOT_USER_ID || "U0BCDG94430";
     const agentIdFromBody = typeof body?.agentId === "string" && body.agentId ? body.agentId : undefined;
-    const agentId = agentIdFromBody || agentIdEnv(coachId) || (await resolveOtherBotId(token, channelId, bridgeBotId));
-    const mention = agentId ? `<@${agentId}>` : `@${COACHES[coachId].shortName}`;
+    const { channelId, mention, agentId } = await resolveCoachChannelMention(token, coachId, bridgeBotId, agentIdFromBody);
+    if (!channelId) return res.status(500).json({ ok: false, error: `채널을 찾지 못했습니다(${COACHES[coachId].channel}). 봇 초대 확인.` });
 
     const prompt = buildCoachPrompt(coachId, diagnosis, mention);
     const result = await postRequest(token, channelId, prompt);

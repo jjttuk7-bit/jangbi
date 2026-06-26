@@ -332,18 +332,28 @@ const COMMON_OUTPUT_RULES = `공통 규칙:
 응답은 짧은 bullet 2~3개로 끝내지 마라.
 반드시 지정된 최소 산출물 개수를 채워라.`;
 
+/** 코치별 멘션 문자열 맵 ("<@U...>" 권장). 각 코치 앱이 없으면 표시 이름으로 폴백. */
+export interface TeamSophiaCoachMentions {
+  Sophia: string;
+  Anne: string;
+  Claire: string;
+  Jane: string;
+  Kelly: string;
+}
+
 /**
  * Team Sophia 통합 프롬프트(buildHermesPrompt) 1개 대신, 코치별 전용 프롬프트 5개를
  * 생성한다. 각 프롬프트는 해당 코치 역할만 수행하도록 금지 항목을 명시해 분업을 강제한다.
- * Slack/Hermes로는 이 배열을 순서대로(Sophia → Anne → Claire → Jane → Kelly) 전송한다.
+ * 각 프롬프트는 해당 코치의 채널/앱으로 따로 전송될 수 있으므로, 코치마다 다른 멘션을
+ * 지정할 수 있다(Anne 앱은 #anne-data에서 @Anne, Sophia는 아직 앱이 없으면 Hermes 등).
  *
  * @param diagnosis 장사비서 폼 입력
- * @param mention Hermes를 깨우는 멘션 문자열 ("<@U...>" 권장, 없으면 "@Hermes Agent")
+ * @param mentions 코치별로 깨울 멘션 문자열 맵
  * @param basicSummary gpt-4o가 만든 '기초 분석' 요약(있으면)
  */
 export function buildTeamSophiaCoachPrompts(
   diagnosis: DiagnosisData,
-  mention = "@Hermes Agent",
+  mentions: TeamSophiaCoachMentions,
   basicSummary = ""
 ): TeamSophiaCoachPrompt[] {
   const fullData = filledFields(diagnosis) || "(아직 입력된 데이터가 거의 없음)";
@@ -351,7 +361,7 @@ export function buildTeamSophiaCoachPrompts(
     ? `\n[이미 제공된 '기초 분석' (gpt-4o 자동 생성 · 참고용)]\n${basicSummary.trim()}\n`
     : "";
 
-  const sophiaPrompt = `${mention}
+  const sophiaPrompt = `${mentions.Sophia}
 
 [Team Sophia / Sophia 총괄 요청]
 
@@ -419,7 +429,7 @@ Sophia 최소 산출물 기준:
 ### 검수 필요 여부
 ...`;
 
-  const annePrompt = `${mention}
+  const annePrompt = `${mentions.Anne}
 
 [Team Sophia / Anne 숫자 진단 요청]
 
@@ -504,7 +514,7 @@ Anne 최소 산출물 기준:
 ### 검수 필요 여부
 ...`;
 
-  const clairePrompt = `${mention}
+  const clairePrompt = `${mentions.Claire}
 
 [Team Sophia / Claire 고객·리뷰 요청]
 
@@ -567,7 +577,7 @@ Claire 최소 산출물 기준:
 
 주의: 고객에게는 "사장님"이라고 부르지 말고 "고객님"이라고 한다. 과한 사과, 과한 보상 약속, 쿠폰 약속은 하지 않는다. 없는 보상은 말하지 않는다.`;
 
-  const janePrompt = `${mention}
+  const janePrompt = `${mentions.Jane}
 
 [Team Sophia / Jane 마케팅 요청]
 
@@ -632,7 +642,7 @@ Jane 최소 산출물 기준:
 ### 검수 필요 여부
 ...`;
 
-  const kellyPrompt = `${mention}
+  const kellyPrompt = `${mentions.Kelly}
 
 [Team Sophia / Kelly 콘텐츠 요청]
 

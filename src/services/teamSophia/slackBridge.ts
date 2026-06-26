@@ -8,6 +8,8 @@
 // 사용 토큰: SLACK_BRIDGE_BOT_TOKEN (장사비서 전용 봇 = "Jangbi Bridge")
 //   - Hermes 봇 토큰과 분리해야 함: 같은 봇으로 멘션하면 Hermes가 자기 메시지로 보고 무시.
 
+import { COACHES, CoachId } from "./types.js";
+
 const SLACK_API = "https://slack.com/api";
 
 async function slackGet(token: string, method: string, params: Record<string, string>): Promise<any> {
@@ -89,15 +91,35 @@ export async function postRequest(token: string, channelId: string, text: string
   return { ok: data.ok, channel: data.channel, ts: data.ts, error: data.error };
 }
 
-/** 기존 스레드(threadTs)에 답글 형태로 메시지를 게시한다. */
-export async function postThreadReply(
+/** 코치 앱(agent) 멘션 env var 이름. 예: "anne-data" → "SLACK_AGENT_ANNE_DATA" */
+export function coachAgentEnvVar(coachId: CoachId): string {
+  return "SLACK_AGENT_" + coachId.toUpperCase().replace(/-/g, "_");
+}
+
+export interface CoachChannelMention {
+  channelId?: string;
+  agentId?: string;
+  /** 채널/멘션 해석 결과. agentId가 있으면 "<@U...>", 없으면 표시 이름("@Anne" 등)으로 폴백. */
+  mention: string;
+}
+
+/**
+ * 코치 전용 채널(COACHES[coachId].channel)을 찾고, 그 채널에 있는 코치 앱의 멘션을 해석한다.
+ * 해석 우선순위: agentIdOverride > 환경변수(SLACK_AGENT_*) > 채널 기록에서 자동 탐색.
+ * api/coach-ask.ts와 api/sophia-ask.ts가 동일한 로직을 공유하기 위한 단일 기준.
+ */
+export async function resolveCoachChannelMention(
   token: string,
-  channelId: string,
-  threadTs: string,
-  text: string
-): Promise<PostResult> {
-  const data = await slackPost(token, "chat.postMessage", { channel: channelId, text, thread_ts: threadTs });
-  return { ok: data.ok, channel: data.channel, ts: data.ts, error: data.error };
+  coachId: CoachId,
+  bridgeBotId: string,
+  agentIdOverride?: string
+): Promise<CoachChannelMention> {
+  const coach = COACHES[coachId];
+  const channelId = await resolveChannelId(token, coach.channel);
+  if (!channelId) return { mention: `@${coach.shortName}` };
+
+  const agentId = agentIdOverride || process.env[coachAgentEnvVar(coachId)] || (await resolveOtherBotId(token, channelId, bridgeBotId));
+  return { channelId, agentId, mention: agentId ? `<@${agentId}>` : `@${coach.shortName}` };
 }
 
 export interface CoachSendItem {
@@ -106,43 +128,48 @@ export interface CoachSendItem {
   prompt: string;
 }
 
-export interface CoachSendResult {
+export interface CoachSendOutcome {
+  coach: string;
   ok: boolean;
   channel?: string;
-  /** 스레드 루트 ts (첫 메시지의 ts). 이후 폴링에 사용한다. */
   ts?: string;
+  error?: string;
+}
+
+export interface CoachSendResult {
+  ok: boolean;
+  outcomes: CoachSendOutcome[];
   /** 전송 실패한 코치 요청 목록(코치명 + 에러). */
   failures: { coach: string; error: string }[];
 }
 
 /**
- * 코치별 프롬프트 배열을 같은 Slack 스레드에 순차 전송한다.
- * 첫 항목이 스레드 루트가 되고, 나머지는 thread_ts로 그 스레드에 답글로 이어 붙인다.
- * 일부 전송이 실패해도 나머지는 계속 시도하고, 실패한 코치는 failures에 기록한다.
+ * 코치별 프롬프트를 각자의 채널에 독립적으로 게시한다(코치마다 채널이 다르므로 스레드로
+ * 묶지 않는다). 일부 전송이 실패해도 나머지는 계속 시도하고, 실패한 코치는 failures에 기록한다.
  */
-export async function sendCoachPromptSequence(
-  token: string,
-  channelId: string,
-  items: CoachSendItem[]
+export async function sendPromptsToChannels(
+  items: { coach: string; channelId?: string; prompt: string }[],
+  token: string
 ): Promise<CoachSendResult> {
+  const outcomes: CoachSendOutcome[] = [];
   const failures: { coach: string; error: string }[] = [];
-  if (items.length === 0) return { ok: false, failures: [{ coach: "-", error: "전송할 프롬프트가 없습니다." }] };
 
-  const root = await postRequest(token, channelId, items[0].prompt);
-  if (!root.ok) {
-    failures.push({ coach: items[0].coach, error: root.error || "알 수 없는 오류" });
-    return { ok: false, channel: root.channel, failures };
-  }
-
-  for (const item of items.slice(1)) {
-    const result = await postThreadReply(token, channelId, root.ts!, item.prompt);
+  for (const item of items) {
+    if (!item.channelId) {
+      const error = "채널을 찾지 못했습니다.";
+      outcomes.push({ coach: item.coach, ok: false, error });
+      failures.push({ coach: item.coach, error });
+      continue;
+    }
+    const result = await postRequest(token, item.channelId, item.prompt);
     if (!result.ok) {
-      console.error(`[sendCoachPromptSequence] ${item.coach} 전송 실패:`, result.error);
+      console.error(`[sendPromptsToChannels] ${item.coach} 전송 실패:`, result.error);
       failures.push({ coach: item.coach, error: result.error || "알 수 없는 오류" });
     }
+    outcomes.push({ coach: item.coach, ok: result.ok, channel: result.channel, ts: result.ts, error: result.error });
   }
 
-  return { ok: failures.length === 0, channel: root.channel, ts: root.ts, failures };
+  return { ok: failures.length === 0, outcomes, failures };
 }
 
 export interface ThreadReply {

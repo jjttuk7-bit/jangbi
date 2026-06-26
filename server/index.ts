@@ -14,9 +14,17 @@ import { TeamSophiaSlackBundle, TeamSophiaEngineInput, CONTEXT_DOC } from "../sr
 import { generateDiagnosisReport } from "../src/services/diagnosisCore";
 import { deriveStoreName, generateTeamSophiaReport } from "../src/services/teamSophia/llmCore";
 import { buildSlackBundle } from "../src/services/teamSophia/slackBundle";
-import { postRequest, sendCoachPromptSequence, resolveChannelId, resolveHermesUserId, resolveOtherBotId, getThreadReplies } from "../src/services/teamSophia/slackBridge";
-import { buildTeamSophiaCoachPrompts, buildCoachPrompt } from "../src/services/teamSophia/hermesPrompt";
+import { postRequest, resolveChannelId, resolveHermesUserId, resolveCoachChannelMention, sendPromptsToChannels, getThreadReplies } from "../src/services/teamSophia/slackBridge";
+import { buildTeamSophiaCoachPrompts, buildCoachPrompt, TeamSophiaCoachMentions } from "../src/services/teamSophia/hermesPrompt";
 import { COACHES, CoachId } from "../src/services/teamSophia/types";
+
+// buildTeamSophiaCoachPrompts()의 coach 표기("Anne" 등) → COACHES 레지스트리 coachId.
+const COACH_ID_BY_NAME: Record<"Anne" | "Claire" | "Jane" | "Kelly", CoachId> = {
+  Anne: "anne-data",
+  Claire: "claire-cs",
+  Jane: "jane-marketer",
+  Kelly: "kelly-creator",
+};
 
 const app = express();
 app.use(express.json({ limit: "1mb" }));
@@ -85,24 +93,66 @@ app.post("/api/slack", async (req, res) => {
   }
 });
 
-// 로컬 dev: Hermes 브릿지 — 요청 게시
+// 로컬 dev: 팀소피아 코치별 요청 게시 — Anne/Claire/Jane/Kelly는 각자 채널+앱 멘션,
+// Sophia는 아직 전용 앱이 없어 #team-sophia-daily에서 Hermes를 멘션한다.
 app.post("/api/sophia-ask", async (req, res) => {
   if (!SLACK_BRIDGE_BOT_TOKEN) return res.status(500).json({ ok: false, error: "SLACK_BRIDGE_BOT_TOKEN 미설정" });
   const diagnosis = req.body?.diagnosis;
   if (!diagnosis || typeof diagnosis !== "object") return res.status(400).json({ ok: false, error: "diagnosis 필요" });
   try {
-    const channelId = await resolveChannelId(SLACK_BRIDGE_BOT_TOKEN, TEAM_SOPHIA_CHANNEL);
-    if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${TEAM_SOPHIA_CHANNEL})` });
-    const hermesId = await resolveHermesUserId(SLACK_BRIDGE_BOT_TOKEN, channelId);
-    const mention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
+    const bridgeBotId = process.env.SLACK_BRIDGE_BOT_USER_ID || "U0BCDG94430";
+
+    const sophiaChannelId = await resolveChannelId(SLACK_BRIDGE_BOT_TOKEN, TEAM_SOPHIA_CHANNEL);
+    const hermesId = sophiaChannelId ? await resolveHermesUserId(SLACK_BRIDGE_BOT_TOKEN, sophiaChannelId) : undefined;
+    const sophiaMention = hermesId ? `<@${hermesId}>` : "@Hermes Agent";
+
+    const [anne, claire, jane, kelly] = await Promise.all(
+      (Object.keys(COACH_ID_BY_NAME) as (keyof typeof COACH_ID_BY_NAME)[]).map((name) =>
+        resolveCoachChannelMention(SLACK_BRIDGE_BOT_TOKEN!, COACH_ID_BY_NAME[name], bridgeBotId)
+      )
+    );
+
+    const mentions: TeamSophiaCoachMentions = {
+      Sophia: sophiaMention,
+      Anne: anne.mention,
+      Claire: claire.mention,
+      Jane: jane.mention,
+      Kelly: kelly.mention,
+    };
+
     const basicSummary = typeof req.body?.basicSummary === "string" ? req.body.basicSummary : "";
-    const coachPrompts = buildTeamSophiaCoachPrompts(diagnosis, mention, basicSummary);
-    const result = await sendCoachPromptSequence(SLACK_BRIDGE_BOT_TOKEN, channelId, coachPrompts);
-    if (!result.ts) return res.status(502).json({ ok: false, error: `게시 실패: ${result.failures.map((f) => `${f.coach}(${f.error})`).join(", ")}` });
-    if (result.failures.length > 0) {
-      console.error("[sophia-ask] 일부 코치 요청 전송 실패:", result.failures);
+    const coachPrompts = buildTeamSophiaCoachPrompts(diagnosis, mentions, basicSummary);
+    const channelByCoach: Record<string, { channelId?: string }> = { Anne: anne, Claire: claire, Jane: jane, Kelly: kelly };
+
+    const sophiaPrompt = coachPrompts.find((p) => p.coach === "Sophia");
+    let sophiaResult: { ok: boolean; channel?: string; ts?: string; error?: string } = { ok: false, error: "Sophia 채널을 찾지 못했습니다." };
+    if (sophiaChannelId && sophiaPrompt) {
+      sophiaResult = await postRequest(SLACK_BRIDGE_BOT_TOKEN, sophiaChannelId, sophiaPrompt.prompt);
     }
-    return res.json({ ok: true, channel: result.channel, ts: result.ts, hermesResolved: Boolean(hermesId), failures: result.failures });
+
+    const coachOnlyItems = coachPrompts
+      .filter((p) => p.coach !== "Sophia")
+      .map((p) => ({ coach: p.coach, channelId: channelByCoach[p.coach]?.channelId, prompt: p.prompt }));
+    const coachSendResult = await sendPromptsToChannels(coachOnlyItems, SLACK_BRIDGE_BOT_TOKEN);
+
+    const failures = [...coachSendResult.failures];
+    if (!sophiaResult.ok) failures.unshift({ coach: "Sophia", error: sophiaResult.error || "게시 실패" });
+    if (failures.length > 0) {
+      console.error("[sophia-ask] 일부 코치 요청 전송 실패:", failures);
+    }
+
+    if (!sophiaResult.ts) {
+      return res.status(502).json({ ok: false, error: `게시 실패: ${failures.map((f) => `${f.coach}(${f.error})`).join(", ")}` });
+    }
+
+    return res.json({
+      ok: failures.length === 0,
+      channel: sophiaResult.channel,
+      ts: sophiaResult.ts,
+      hermesResolved: Boolean(hermesId),
+      coachResults: coachSendResult.outcomes,
+      failures,
+    });
   } catch (e: any) {
     console.error("[sophia-ask] 오류:", e);
     return res.status(500).json({ ok: false, error: e?.message ?? String(e) });
@@ -132,13 +182,10 @@ app.post("/api/coach-ask", async (req, res) => {
   if (!coachId || !COACHES[coachId]) return res.status(400).json({ ok: false, error: "유효한 coachId 필요" });
   if (!diagnosis || typeof diagnosis !== "object") return res.status(400).json({ ok: false, error: "diagnosis 필요" });
   try {
-    const channelId = await resolveChannelId(SLACK_BRIDGE_BOT_TOKEN, COACHES[coachId].channel);
-    if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${COACHES[coachId].channel})` });
     const bridgeBotId = process.env.SLACK_BRIDGE_BOT_USER_ID || "U0BCDG94430";
-    const envKey = "SLACK_AGENT_" + coachId.toUpperCase().replace(/-/g, "_");
     const agentIdFromBody = typeof req.body?.agentId === "string" && req.body.agentId ? req.body.agentId : undefined;
-    const agentId = agentIdFromBody || process.env[envKey] || (await resolveOtherBotId(SLACK_BRIDGE_BOT_TOKEN, channelId, bridgeBotId));
-    const mention = agentId ? `<@${agentId}>` : `@${COACHES[coachId].shortName}`;
+    const { channelId, mention, agentId } = await resolveCoachChannelMention(SLACK_BRIDGE_BOT_TOKEN, coachId, bridgeBotId, agentIdFromBody);
+    if (!channelId) return res.status(500).json({ ok: false, error: `채널 못 찾음(${COACHES[coachId].channel})` });
     const prompt = buildCoachPrompt(coachId, diagnosis, mention);
     const result = await postRequest(SLACK_BRIDGE_BOT_TOKEN, channelId, prompt);
     if (!result.ok) return res.status(502).json({ ok: false, error: `게시 실패: ${result.error}` });
